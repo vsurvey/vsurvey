@@ -6,10 +6,11 @@ const TopBar = ({ setActiveTab }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const menuItems = [
-    { id: 'Users', label: 'Create Users' },
-    { id: 'Questions', label: 'Create Questions' },
-    { id: 'surveys', label: 'Create Survey' },
-  ]
+    { id: "Users", label: "Create Users" },
+    { id: "Questions", label: "Create Questions" },
+    { id: "surveys", label: "Create Survey" },
+    { id: "assignuser", label: "Assign User" },
+  ];
   return (
     <div className="fixed top-0 left-0 right-0 bg-white shadow-sm border-b z-50">
       <div className="flex items-center justify-between px-4 sm:px-6 lg:px-10 py-4 sm:py-5 lg:py-6">
@@ -25,8 +26,8 @@ const TopBar = ({ setActiveTab }) => {
             </div>
           </button>
           <h1 className="text-gray-800">
-            <span className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-medium" >V-Survey</span> 
-            <span className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-extralight ml-1">Portal</span>
+            <span className="text-sm sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-medium" >V-Survey</span> 
+            <span className="text-sm sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-extralight ml-1">Portal</span>
           </h1>
         </div>
         <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4">

@@ -1,9 +1,10 @@
 const Sidebar = ({ activeTab, setActiveTab }) => {
   const menuItems = [
-    { id: 'Users', label: 'Create Users' },
-    { id: 'Questions', label: 'Create Questions' },
-    { id: 'surveys', label: 'Create Survey' },
-  ]
+    { id: "Users", label: "Create Users" },
+    { id: "Questions", label: "Create Questions" },
+    { id: "surveys", label: "Create Survey" },
+    { id: "assignuser", label: "Assign User" },
+  ];
 
   return (
     <div className="hidden lg:block w-64 bg-white shadow-lg h-screen fixed left-0 top-0 pt-20 z-40">

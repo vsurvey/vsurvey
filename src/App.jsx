@@ -6,6 +6,7 @@ import Surveys from './components/CreateQuestion'
 import CreateSurvey from './components/CreateSurveys'
 import SetPassword from './components/SetPassword'
 import { supabase } from './lib/supabaseClient'
+import AssignUser from "./components/AssignUser";
 
 
 function App() {
@@ -42,14 +43,16 @@ function App() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'Users':
-        return <SurveyPersonnel />
-      case 'Questions':
-        return <Surveys />
-      case 'surveys':
-        return <CreateSurvey />
+      case "Users":
+        return <SurveyPersonnel />;
+      case "Questions":
+        return <Surveys />;
+      case "surveys":
+        return <CreateSurvey />;
+      case "assignuser":
+        return <AssignUser />;
       default:
-        return <SurveyPersonnel />
+        return <SurveyPersonnel />;
     }
   }
 
