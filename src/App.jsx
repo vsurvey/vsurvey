@@ -5,14 +5,15 @@ import SurveyPersonnel from './components/CreateUsers'
 import Surveys from './components/CreateQuestion'
 import CreateSurvey from './components/CreateSurveys'
 import SetPassword from './components/SetPassword'
+import Login from './components/Login'
 import { supabase } from './lib/supabaseClient'
 import AssignUser from "./components/AssignUser";
 
 
 function App() {
   const [activeTab, setActiveTab] = useState('personnel')
-
-  const [session, setSession] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [session, setSession] = useState(false)
   const [showPasswordScreen, setShowPasswordScreen] = useState(false)
 
   useEffect(() => {
@@ -24,6 +25,7 @@ function App() {
                          hashParams.has('error')
     
     if (hasAuthParams) {
+      setIsAuthenticated(true)
       setShowPasswordScreen(true)
       setSession(false)
       // Clear URL parameters
@@ -33,6 +35,7 @@ function App() {
     // Listen for auth changes (email link clicks)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
+        setIsAuthenticated(true)
         setShowPasswordScreen(true)
         setSession(false)
       }
@@ -58,7 +61,14 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {session && !showPasswordScreen ? (
+      {!isAuthenticated ? (
+        <Login onLogin={() => setIsAuthenticated(true)} />
+      ) : showPasswordScreen ? (
+        <SetPassword onPasswordSet={() => {
+          setSession(true)
+          setShowPasswordScreen(false)
+        }} />
+      ) : session ? (
         <>
           <TopBar setActiveTab={setActiveTab} />
           <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -67,10 +77,13 @@ function App() {
           </main>
         </>
       ) : (
-        <SetPassword onPasswordSet={() => {
-          setSession(true)
-          setShowPasswordScreen(false)
-        }} />
+        <>
+          <TopBar setActiveTab={setActiveTab} />
+          <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+          <main className="lg:ml-64 pt-16 sm:pt-20 md:pt-24 p-4 sm:p-6 md:p-8 mt-10">
+            {renderContent()}
+          </main>
+        </>
       )}
     </div>
   )
