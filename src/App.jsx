@@ -16,6 +16,13 @@ function App() {
   const [session, setSession] = useState(false)
   const [showPasswordScreen, setShowPasswordScreen] = useState(false)
 
+  const handleLogout = () => {
+    setIsAuthenticated(false)
+    setSession(false)
+    setShowPasswordScreen(false)
+    setActiveTab('personnel')
+  }
+
   useEffect(() => {
     // Check if coming from email link (including hash parameters)
     const urlParams = new URLSearchParams(window.location.search)
@@ -70,7 +77,7 @@ function App() {
         }} />
       ) : session ? (
         <>
-          <TopBar setActiveTab={setActiveTab} />
+          <TopBar setActiveTab={setActiveTab} onLogout={handleLogout} />
           <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
           <main className="lg:ml-64 pt-16 sm:pt-20 md:pt-24 p-4 sm:p-6 md:p-8 mt-10">
             {renderContent()}
@@ -78,7 +85,7 @@ function App() {
         </>
       ) : (
         <>
-          <TopBar setActiveTab={setActiveTab} />
+          <TopBar setActiveTab={setActiveTab} onLogout={handleLogout} />
           <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
           <main className="lg:ml-64 pt-16 sm:pt-20 md:pt-24 p-4 sm:p-6 md:p-8 mt-10">
             {renderContent()}
