@@ -2,8 +2,9 @@ import { Button } from "@/components/ui/button"
 import { IoIosArrowDown } from "react-icons/io";
 import { useState } from "react";
 
-const TopBar = ({ setActiveTab }) => {
+const TopBar = ({ setActiveTab, onLogout }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
 
   const menuItems = [
     { id: "Users", label: "Create Users" },
@@ -38,12 +39,30 @@ const TopBar = ({ setActiveTab }) => {
             <span className="hidden sm:inline">+ Create Survey</span>
             <span className="sm:hidden">+ Survey</span>
           </Button>
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-300 rounded-full"></div>
-            <span className="hidden sm:inline text-gray-700 font-medium text-sm">
-              Chris Loo
-            </span>
-            <button> <IoIosArrowDown className="text-base" /> </button>
+          <div className="relative">
+            <button 
+              onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+              className="flex items-center space-x-2 sm:space-x-3 hover:bg-gray-50 rounded-lg p-2"
+            >
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-300 rounded-full"></div>
+              <span className="hidden sm:inline text-gray-700 font-medium text-sm">
+                Chris Loo
+              </span>
+              <IoIosArrowDown className="text-base" />
+            </button>
+            {isProfileDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border z-50">
+                <button
+                  onClick={() => {
+                    onLogout()
+                    setIsProfileDropdownOpen(false)
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -62,6 +81,12 @@ const TopBar = ({ setActiveTab }) => {
             </button>
           ))}
         </div>
+      )}
+      {isProfileDropdownOpen && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setIsProfileDropdownOpen(false)}
+        ></div>
       )}
     </div>
   )
