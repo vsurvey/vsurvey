@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Card, CardContent } from './ui/card'
-import loginImage from '../assets/1.png'
+import { Button } from '../../ui/button'
+import { Input } from '../../ui/input'
+import { Card, CardContent } from '../../ui/card'
+import loginImage from '../../../assets/1.png'
 
 const Login = ({ onLogin }) => {
   const [email, setEmail] = useState('')
@@ -15,7 +15,12 @@ const Login = ({ onLogin }) => {
     
     setTimeout(() => {
       setIsLoading(false)
-      onLogin()
+      // Check for super admin credentials
+      if (email === 'superadmin@vsurvey.com' && password === 'superadmin123') {
+        onLogin('superadmin')
+      } else {
+        onLogin('client')
+      }
     }, 1000)
   }
 
@@ -62,6 +67,15 @@ const Login = ({ onLogin }) => {
                 <div className="text-center mb-8">
                   <h2 className="text-3xl font-bold text-gray-800 mb-2">Welcome Back</h2>
                   <p className="text-gray-600">Sign in to access your dashboard</p>
+                  
+                  {/* Admin Credentials Display */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mt-4 text-left">
+                    <h3 className="text-xs font-semibold text-blue-800 mb-1">Super Admin Access:</h3>
+                    <div className="text-xs text-blue-700 space-y-1">
+                      <p><strong>Email:</strong> superadmin@vsurvey.com</p>
+                      <p><strong>Password:</strong> superadmin123</p>
+                    </div>
+                  </div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
