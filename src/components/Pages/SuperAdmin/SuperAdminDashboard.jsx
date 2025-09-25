@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,30 +7,54 @@ import Sidebar from "../SideBar/Sidebar";
 
 export default function SuperAdminDashboard() {
   const [activeTab, setActiveTab] = useState('admins');
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [clientAdmins, setClientAdmins] = useState([
-    { id: 1, full_name: 'John Client', email: 'john@client.com' },
-    { id: 2, full_name: 'Sarah Admin', email: 'sarah@admin.com' },
-    { id: 3, full_name: 'Mike Manager', email: 'mike@manager.com' }
-  ]);
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: ''
+  });
+  const [clientAdmins, setClientAdmins] = useState([]);
+  const [message, setMessage] = useState('');
 
-  const handleCreateAdmin = () => {
-    if (!fullName || !email) {
-      alert('Please enter full name and email.');
+  useEffect(() => {
+    const savedAdmins = localStorage.getItem('clientAdmins');
+    if (savedAdmins) {
+      setClientAdmins(JSON.parse(savedAdmins));
+    }
+  }, []);
+
+  const saveAdminsToStorage = (updatedAdmins) => {
+    localStorage.setItem('clientAdmins', JSON.stringify(updatedAdmins));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (!formData.fullName.trim() || !formData.email.trim()) {
+      setMessage('Please fill in all required fields');
       return;
     }
 
     const newAdmin = {
-      id: clientAdmins.length + 1,
-      full_name: fullName,
-      email: email
+      id: Date.now(),
+      fullName: formData.fullName.trim(),
+      email: formData.email.trim(),
+      isActive: true
     };
 
-    setClientAdmins([...clientAdmins, newAdmin]);
-    setFullName("");
-    setEmail("");
-    alert('Client admin created successfully!');
+    const updatedAdmins = [newAdmin, ...clientAdmins];
+    setClientAdmins(updatedAdmins);
+    saveAdminsToStorage(updatedAdmins);
+    setFormData({ fullName: '', email: '' });
+    setMessage('Survey User created successfully!');
+    
+    setTimeout(() => setMessage(''), 3000);
+  };
+
+  const toggleAdminStatus = (adminId) => {
+    const updatedAdmins = clientAdmins.map(admin => 
+      admin.id === adminId ? { ...admin, isActive: !admin.isActive } : admin
+    );
+    setClientAdmins(updatedAdmins);
+    saveAdminsToStorage(updatedAdmins);
   };
 
   const handleLogout = () => {
@@ -48,43 +72,46 @@ export default function SuperAdminDashboard() {
           
           <Card className="shadow-lg rounded-none">
             <CardHeader>
-              <CardTitle className="text-base md:text-lg lg:text-xl text-gray-800">Create Client Admin</CardTitle>
+              <CardTitle className="text-base md:text-lg lg:text-xl text-gray-800">Client Admin Creation Form</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <form className="space-y-4" onSubmit={handleSubmit}>
                 <div>
                   <label className="block text-xs md:text-sm font-bold text-black mb-2">FULL NAME</label>
                   <Input
                     type="text"
-                    placeholder="Enter client admin name"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                    placeholder="Enter full name"
+                    required
                     className="rounded-[5px] border-gray-400 p-3 text-sm w-full"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs md:text-sm font-bold text-black mb-2">EMAIL ADDRESS</label>
+                  <label className="block text-xs md:text-sm font-bold text-black mb-2">EMAIL</label>
                   <Input
                     type="email"
-                    placeholder="Enter client admin email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    placeholder="Enter email address"
+                    required
                     className="rounded-[5px] border-gray-400 p-3 text-sm w-full"
                   />
                 </div>
                 <Button 
-                  onClick={handleCreateAdmin}
+                  type="submit"
                   className="w-full bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-600 hover:to-purple-700 p-4 text-sm"
                 >
                   Create Client Admin
                 </Button>
-              </div>
+              </form>
+              {message && <p className="mt-4 text-sm text-green-600">{message}</p>}
             </CardContent>
           </Card>
         </div>
         
         <div className="w-full lg:w-80 lg:flex-shrink-0">
-          <AdminsList clientAdmins={clientAdmins} />
+          <AdminsList clientAdmins={clientAdmins} toggleAdminStatus={toggleAdminStatus} />
         </div>
       </div>
     );
@@ -127,7 +154,7 @@ const SuperAdminSidebar = ({ activeTab, setActiveTab }) => {
   );
 };
 
-const AdminsList = ({ clientAdmins }) => {
+const AdminsList = ({ clientAdmins, toggleAdminStatus }) => {
   return (
     <div className="lg:w-80 lg:shadow-lg lg:h-screen lg:fixed lg:right-0 lg:top-0 lg:z-40 lg:bg-white lg:overflow-y-auto w-full bg-transparent">
       <div className="lg:p-4 lg:mt-20 p-4 space-y-3">
@@ -140,17 +167,33 @@ const AdminsList = ({ clientAdmins }) => {
           <div className="space-y-2 lg:space-y-3">
             {clientAdmins.length === 0 ? (
               <div className="p-3 lg:p-4 border border-gray-300 rounded-lg bg-white">
-                <p className="text-gray-500 text-xs">No client admins yet</p>
+                <p className="text-gray-500 text-xs">
+                  No users created yet
+                </p>
               </div>
             ) : (
               clientAdmins.map((admin) => (
                 <div key={admin.id} className="p-3 lg:p-4 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors">
-                  <h4 className="font-medium text-gray-800 text-xs lg:text-sm break-words">
-                    {admin.full_name}
+                  <h4 className="font-medium text-gray-800 text-xs lg:text-sm break-words mb-2">
+                    {admin.fullName}
                   </h4>
-                  <p className="text-xs text-gray-600 mt-1 break-words">
-                    {admin.email}
-                  </p>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between py-1">
+                      <span className={`text-xs break-words flex-1 ${
+                        admin.isActive ? "text-gray-600" : "line-through text-gray-400"
+                      }`}>
+                        {admin.email}
+                      </span>
+                      <Button
+                        variant={admin.isActive ? "destructive" : "default"}
+                        size="sm"
+                        onClick={() => toggleAdminStatus(admin.id)}
+                        className="text-xs ml-2 px-2 py-1"
+                      >
+                        {admin.isActive ? "Deactivate" : "Activate"}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               ))
             )}

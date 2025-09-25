@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -7,64 +7,55 @@ import { Label } from "@/components/ui/label"
 import { Edit3, X } from "@/components/ui/icons"
 import Sidebar from "./AssignedSurveys"
 
+
 const Surveys = () => {
   const [questionText, setQuestionText] = useState('')
   const [responseType, setResponseType] = useState('')
   const [ratingScale, setRatingScale] = useState('1-5')
-  const [questions, setQuestions] = useState([
-    {
-      id: 1,
-      text: "How satisfied are you with our product?",
-      type: "Rating scale (1-5)"
-    },
-    {
-      id: 2, 
-      text: "What features would you like to see improved?",
-      type: "Text response"
-    },
-    {
-      id: 3,
-      text: "Would you recommend our product to others?",
-      type: "Yes/No"
-    },
-    {
-      id: 4,
-      text: "How often do you use our product?",
-      type: "Multiple choice",
-      options: ["Daily", "Weekly", "Monthly", "Rarely"]
-    },
-    {
-      id: 5,
-      text: "When did you first start using our product?",
-      type: "Date picker"
-    },
-    {
-      id: 6,
-      text: "What is your primary use case for our product?",
-      type: "Text response"
-    },
-    {
-      id: 7,
-      text: "How would you rate our customer support?",
-      type: "Rating scale (1-10)"
-    },
-    {
-      id: 8,
-      text: "Which pricing plan are you currently on?",
-      type: "Multiple choice",
-      options: ["Free", "Basic", "Premium", "Enterprise"]
-    },
-    {
-      id: 9,
-      text: "Have you experienced any technical issues?",
-      type: "Yes/No"
-    },
-    {
-      id: 10,
-      text: "What is your overall experience with our product?",
-      type: "Text response"
+  const [questions, setQuestions] = useState([])
+
+  useEffect(() => {
+    const savedQuestions = localStorage.getItem('surveyQuestions')
+    if (savedQuestions) {
+      setQuestions(JSON.parse(savedQuestions))
+    } else {
+      // Default questions if none saved
+      const defaultQuestions = [
+        {
+          id: 1,
+          text: "How satisfied are you with our product?",
+          type: "Rating scale (1-5)"
+        },
+        {
+          id: 2, 
+          text: "What features would you like to see improved?",
+          type: "Text response"
+        },
+        {
+          id: 3,
+          text: "Would you recommend our product to others?",
+          type: "Yes/No"
+        },
+        {
+          id: 4,
+          text: "How often do you use our product?",
+          type: "Multiple choice",
+          options: ["Daily", "Weekly", "Monthly", "Rarely"]
+        },
+        {
+          id: 5,
+          text: "When did you first start using our product?",
+          type: "Date picker"
+        }
+      ]
+      setQuestions(defaultQuestions)
+      localStorage.setItem('surveyQuestions', JSON.stringify(defaultQuestions))
     }
-  ])
+  }, [])
+
+  const saveQuestionsToStorage = (updatedQuestions) => {
+    localStorage.setItem('surveyQuestions', JSON.stringify(updatedQuestions))
+  }
   const [multipleChoiceOptions, setMultipleChoiceOptions] = useState([''])
   
   // Edit modal states
@@ -95,7 +86,9 @@ const Surveys = () => {
         type: finalType,
         options: responseType === 'Multiple choice' ? multipleChoiceOptions.filter(opt => opt.trim()) : []
       }
-      setQuestions([newQuestion, ...questions])
+      const updatedQuestions = [newQuestion, ...questions]
+      setQuestions(updatedQuestions)
+      saveQuestionsToStorage(updatedQuestions)
       setQuestionText('')
       setResponseType('')
       setRatingScale('1-5')
@@ -133,6 +126,7 @@ const Surveys = () => {
           : q
       )
       setQuestions(updatedQuestions)
+      saveQuestionsToStorage(updatedQuestions)
       closeEditModal()
     }
   }
@@ -408,7 +402,7 @@ const Surveys = () => {
               
               <div className="flex flex-col sm:flex-row gap-2 pt-4">
                 <Button onClick={saveEditQuestion} className="flex-1">
-                  Edit Question
+                  Update Question
                 </Button>
                 <Button variant="outline" onClick={closeEditModal} className="flex-1">
                   Cancel

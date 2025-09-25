@@ -14,13 +14,20 @@ const AssignUser = () => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showSurveyDropdown, setShowSurveyDropdown] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState("");
+  const [users, setUsers] = useState([]);
 
-  const users = [
-    { id: "john.doe", name: "John Doe" },
-    { id: "jane.smith", name: "Jane Smith" },
-    { id: "mike.johnson", name: "Mike Johnson" },
-    { id: "sarah.wilson", name: "Sarah Wilson" },
-  ];
+  useEffect(() => {
+    const savedUsers = localStorage.getItem('surveyUsers');
+    if (savedUsers) {
+      const parsedUsers = JSON.parse(savedUsers);
+      // Convert to the format expected by AssignUser
+      const formattedUsers = parsedUsers.map(user => ({
+        id: user.id.toString(),
+        name: user.fullName
+      }));
+      setUsers(formattedUsers);
+    }
+  }, []);
 
   const surveys = [
     { id: 1, name: "Customer Satisfaction Survey" },
@@ -33,15 +40,17 @@ const AssignUser = () => {
   
 
   useEffect(() => {
-    localStorage.setItem('userAssignments', JSON.stringify(userAssignments));
-  }, [userAssignments]);
-
-  useEffect(() => {
     const saved = localStorage.getItem("userAssignments");
     if (saved) {
       setUserAssignments(JSON.parse(saved));
     }
   }, []);
+
+  useEffect(() => {
+    if (Object.keys(userAssignments).length > 0) {
+      localStorage.setItem('userAssignments', JSON.stringify(userAssignments));
+    }
+  }, [userAssignments]);
 
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(userSearch.toLowerCase()) &&
@@ -150,8 +159,9 @@ const AssignUser = () => {
                   }}
                   onFocus={() => setShowUserDropdown(true)}
                   onBlur={() => setTimeout(() => setShowUserDropdown(false), 200)}
-                  placeholder="Search and select users..."
+                  placeholder={users.length === 0 ? "No users available. Create users first." : "Search and select users..."}
                   className="rounded-[5px] border-gray-400 p-3 text-sm w-full"
+                  disabled={users.length === 0}
                 />
                 {showUserDropdown && filteredUsers.length > 0 && (
                   <div className="absolute z-10 w-full bg-white border border-gray-400 rounded-[5px] mt-1 max-h-40 overflow-y-auto">
