@@ -1,7 +1,6 @@
 # Base image
 FROM python:3.10-slim
 
-
 # Set working directory
 WORKDIR /app
 
@@ -20,6 +19,5 @@ EXPOSE $PORT
 # Set environment variable for unbuffered output (logs in real-time)
 ENV PYTHONUNBUFFERED=1
 
-# Run the app with uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "${PORT}"]
-
+# Run the app with uvicorn (shell form so $PORT works)
+CMD uvicorn main:app --host 0.0.0.0 --port $PORT
