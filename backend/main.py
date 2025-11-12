@@ -12,12 +12,22 @@ from routers import users, questions, surveys, assignments, deletion
 from firebase_admin import auth as firebase_auth
 from middleware.auth import verify_firebase_token, get_current_user_email
 
+from firebase_init import init_firebase
+
+# Firebase setup
+init_firebase()
+print("Firebase initialized successfully!")
+
 # Initialize FastAPI app
 app = FastAPI(
     title="Survey App API",
     description="FastAPI backend for Survey Application",
     version="1.0.0"
 )
+
+# Firebase
+db = init_firebase()
+print("Firebase initialized successfully!")
 
 # CORS middleware
 allowed_origins = [
@@ -33,7 +43,7 @@ if os.getenv("FRONTEND_URL"):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

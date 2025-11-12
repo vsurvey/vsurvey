@@ -167,7 +167,7 @@ const otherUserData = await getDoc(doc(db, "users", "other-user-id")); // Should
 ```javascript
 // Only proper admin should succeed
 const adminData = await getDocs(
-  collection(db, "superadmin", "u1JiUOCTXxaOkoK83AFH", "clients")
+  collection(db, "superadmin", "1nXphRXcXR4h99bneWyw", "clients")
 );
 ```
 

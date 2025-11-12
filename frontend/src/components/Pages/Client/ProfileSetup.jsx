@@ -93,7 +93,7 @@ const ProfileSetup = ({
   useEffect(() => {
     const fetchClientData = async () => {
       try {
-        const superadminId = "u1JiUOCTXxaOkoK83AFH";
+        const superadminId = "1nXphRXcXR4h99bneWyw";
         const clientsRef = collection(
           db,
           "superadmin",

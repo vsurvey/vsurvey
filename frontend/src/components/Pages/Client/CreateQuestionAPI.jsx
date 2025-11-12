@@ -102,7 +102,7 @@ const CreateQuestionAPI = ({
       const clientsRef = collection(
         db,
         "superadmin",
-        "u1JiUOCTXxaOkoK83AFH",
+        "1nXphRXcXR4h99bneWyw",
         "clients"
       );
       const snapshot = await getDocs(clientsRef);
@@ -134,7 +134,7 @@ const CreateQuestionAPI = ({
       const questionsRef = collection(
         db,
         "superadmin",
-        "u1JiUOCTXxaOkoK83AFH",
+        "1nXphRXcXR4h99bneWyw",
         "clients",
         clientId,
         "questions"
@@ -211,7 +211,7 @@ const CreateQuestionAPI = ({
       const questionsRef = collection(
         db,
         "superadmin",
-        "u1JiUOCTXxaOkoK83AFH",
+        "1nXphRXcXR4h99bneWyw",
         "clients",
         clientId,
         "questions"
@@ -266,7 +266,7 @@ const CreateQuestionAPI = ({
       const questionRef = doc(
         db,
         "superadmin",
-        "u1JiUOCTXxaOkoK83AFH",
+        "1nXphRXcXR4h99bneWyw",
         "clients",
         clientId,
         "questions",
@@ -337,7 +337,7 @@ const CreateQuestionAPI = ({
         const surveysRef = collection(
           db,
           "superadmin",
-          "u1JiUOCTXxaOkoK83AFH",
+          "1nXphRXcXR4h99bneWyw",
           "clients",
           clientId,
           "surveys"
@@ -357,7 +357,7 @@ const CreateQuestionAPI = ({
             const surveyRef = doc(
               db,
               "superadmin",
-              "u1JiUOCTXxaOkoK83AFH",
+              "1nXphRXcXR4h99bneWyw",
               "clients",
               clientId,
               "surveys",
@@ -380,7 +380,7 @@ const CreateQuestionAPI = ({
         const questionRef = doc(
           db,
           "superadmin",
-          "u1JiUOCTXxaOkoK83AFH",
+          "1nXphRXcXR4h99bneWyw",
           "clients",
           clientId,
           "questions",

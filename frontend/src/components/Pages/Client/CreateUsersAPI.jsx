@@ -78,7 +78,7 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
   const getClientData = async (clientEmail) => {
     try {
       console.log("Searching for client with email:", clientEmail);
-      const superadminId = "u1JiUOCTXxaOkoK83AFH";
+      const superadminId = "1nXphRXcXR4h99bneWyw";
       const clientsRef = collection(db, "superadmin", superadminId, "clients");
       const q = query(clientsRef, where("email", "==", clientEmail));
       const clientsSnapshot = await getDocs(q);
@@ -202,7 +202,7 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
   console.log("Using clientId:", clientId);
   console.log("Profile:", profile);
   console.log(
-    "Database path will be: superadmin/u1JiUOCTXxaOkoK83AFH/clients/" +
+    "Database path will be: superadmin/1nXphRXcXR4h99bneWyw/clients/" +
       clientId +
       "/users"
   );

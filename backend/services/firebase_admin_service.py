@@ -40,7 +40,7 @@ class FirebaseAdminService:
                 result["errors"].append(f"Auth deletion failed: {str(e)}")
             
             # 2. Delete all subcollections for this client
-            superadmin_id = "u1JiUOCTXxaOkoK83AFH"
+            superadmin_id = "1nXphRXcXR4h99bneWyw"
             client_doc_ref = self.db.collection("superadmin").document(superadmin_id).collection("clients").document(client_uid)
             
             # Delete subcollections
@@ -128,7 +128,7 @@ class FirebaseAdminService:
             # 3. Delete survey responses by this user
             try:
                 # Find client document to access survey responses
-                superadmin_id = "u1JiUOCTXxaOkoK83AFH"
+                superadmin_id = "1nXphRXcXR4h99bneWyw"
                 clients_ref = self.db.collection("superadmin").document(superadmin_id).collection("clients")
                 client_docs = clients_ref.where("email", "==", client_email).stream()
                 
@@ -150,7 +150,7 @@ class FirebaseAdminService:
             
             # 4. Delete survey assignments for this user
             try:
-                superadmin_id = "u1JiUOCTXxaOkoK83AFH"
+                superadmin_id = "1nXphRXcXR4h99bneWyw"
                 clients_ref = self.db.collection("superadmin").document(superadmin_id).collection("clients")
                 client_docs = clients_ref.where("email", "==", client_email).stream()
                 

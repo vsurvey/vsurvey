@@ -79,7 +79,7 @@ const SuperAdminDashboardAPI = () => {
 
   // Load clients from Firebase with real-time listener for status changes only
   useEffect(() => {
-    const superadminId = "u1JiUOCTXxaOkoK83AFH";
+    const superadminId = "1nXphRXcXR4h99bneWyw";
     const clientsRef = collection(db, "superadmin", superadminId, "clients");
 
     // Set up real-time listener only for status field changes
@@ -120,8 +120,8 @@ const SuperAdminDashboardAPI = () => {
   const loadClients = async () => {
     try {
       setLoading(true);
-      // Get clients from Firebase structure: superadmin/u1JiUOCTXxaOkoK83AFH/clients
-      const superadminId = "u1JiUOCTXxaOkoK83AFH";
+      // Get clients from Firebase structure: superadmin/1nXphRXcXR4h99bneWyw/clients
+      const superadminId = "1nXphRXcXR4h99bneWyw";
       const clientsRef = collection(db, "superadmin", superadminId, "clients");
       const snapshot = await getDocs(clientsRef);
 
@@ -192,7 +192,7 @@ const SuperAdminDashboardAPI = () => {
       console.log("Password reset email sent successfully");
 
       // Create client document using Firebase UID as document ID
-      const superadminId = "u1JiUOCTXxaOkoK83AFH";
+      const superadminId = "1nXphRXcXR4h99bneWyw";
       const clientDocRef = doc(
         db,
         "superadmin",
@@ -270,7 +270,7 @@ const SuperAdminDashboardAPI = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      const superadminId = "u1JiUOCTXxaOkoK83AFH";
+      const superadminId = "1nXphRXcXR4h99bneWyw";
       await updateDoc(
         doc(db, "superadmin", superadminId, "clients", editingClient.id),
         { company_name: editFormData.name.trim() }
@@ -302,104 +302,140 @@ const SuperAdminDashboardAPI = () => {
       console.log("Client ID:", clientToDelete.id);
       console.log("Firebase UID:", clientToDelete.firebaseUid);
 
-
-
       // Ensure SuperAdmin is authenticated with Firebase Auth
       let user = auth.currentUser;
       if (!user || user.email !== "superadmin@vsurvey.com") {
         console.log("SuperAdmin not authenticated, signing in...");
         try {
           const userCredential = await signInWithEmailAndPassword(
-            auth, 
-            "superadmin@vsurvey.com", 
+            auth,
+            "superadmin@vsurvey.com",
             "superadmin123"
           );
           user = userCredential.user;
           console.log("SuperAdmin authenticated successfully");
         } catch (authError) {
           console.error("Failed to authenticate SuperAdmin:", authError);
-          throw new Error("Authentication failed - please check SuperAdmin credentials");
+          throw new Error(
+            "Authentication failed - please check SuperAdmin credentials"
+          );
         }
       }
-      
+
       const token = await user.getIdToken();
 
       // Use existing legacy delete endpoint
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/delete-user/${clientToDelete.firebaseUid || clientToDelete.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/delete-user/${clientToDelete.firebaseUid || clientToDelete.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
-      });
+      );
 
       const result = await response.json();
-      
+
       if (response.ok && result.success) {
         // Now delete from Firestore (since legacy endpoint only deletes from Auth)
-        const superadminId = "u1JiUOCTXxaOkoK83AFH";
-        
+        const superadminId = "1nXphRXcXR4h99bneWyw";
+
         // Delete all users created by this client
         const globalUsersRef = collection(db, "users");
         const globalUsersSnapshot = await getDocs(globalUsersRef);
         const userDeletePromises = [];
-        
+
         globalUsersSnapshot.forEach((userDoc) => {
           const userData = userDoc.data();
           if (userData.created_by === clientToDelete.email) {
             userDeletePromises.push(deleteDoc(doc(db, "users", userDoc.id)));
           }
         });
-        
+
         await Promise.all(userDeletePromises);
         console.log(`✅ Deleted ${userDeletePromises.length} users`);
 
         // Delete all surveys for this client
-        const surveysRef = collection(db, "superadmin", superadminId, "clients", clientToDelete.id, "surveys");
+        const surveysRef = collection(
+          db,
+          "superadmin",
+          superadminId,
+          "clients",
+          clientToDelete.id,
+          "surveys"
+        );
         const surveysSnapshot = await getDocs(surveysRef);
         const surveyDeletePromises = [];
-        
+
         surveysSnapshot.forEach((surveyDoc) => {
           surveyDeletePromises.push(deleteDoc(surveyDoc.ref));
         });
-        
+
         await Promise.all(surveyDeletePromises);
         console.log(`✅ Deleted ${surveyDeletePromises.length} surveys`);
 
         // Delete all questions for this client
-        const questionsRef = collection(db, "superadmin", superadminId, "clients", clientToDelete.id, "questions");
+        const questionsRef = collection(
+          db,
+          "superadmin",
+          superadminId,
+          "clients",
+          clientToDelete.id,
+          "questions"
+        );
         const questionsSnapshot = await getDocs(questionsRef);
         const questionDeletePromises = [];
-        
+
         questionsSnapshot.forEach((questionDoc) => {
           questionDeletePromises.push(deleteDoc(questionDoc.ref));
         });
-        
+
         await Promise.all(questionDeletePromises);
         console.log(`✅ Deleted ${questionDeletePromises.length} questions`);
 
         // Delete all survey assignments for this client
-        const assignmentsRef = collection(db, "superadmin", superadminId, "clients", clientToDelete.id, "survey_assignments");
+        const assignmentsRef = collection(
+          db,
+          "superadmin",
+          superadminId,
+          "clients",
+          clientToDelete.id,
+          "survey_assignments"
+        );
         const assignmentsSnapshot = await getDocs(assignmentsRef);
         const assignmentDeletePromises = [];
-        
+
         assignmentsSnapshot.forEach((assignmentDoc) => {
           assignmentDeletePromises.push(deleteDoc(assignmentDoc.ref));
         });
-        
+
         await Promise.all(assignmentDeletePromises);
-        console.log(`✅ Deleted ${assignmentDeletePromises.length} survey assignments`);
+        console.log(
+          `✅ Deleted ${assignmentDeletePromises.length} survey assignments`
+        );
 
         // Delete client document
-        const clientDocRef = doc(db, "superadmin", superadminId, "clients", clientToDelete.id);
+        const clientDocRef = doc(
+          db,
+          "superadmin",
+          superadminId,
+          "clients",
+          clientToDelete.id
+        );
         await deleteDoc(clientDocRef);
         console.log("✅ Client document deleted from Firestore");
-        
-        setMessage("✅ Client and all associated data deleted successfully from both Auth and Database!");
+
+        setMessage(
+          "✅ Client and all associated data deleted successfully from both Auth and Database!"
+        );
       } else {
-        setMessage(`❌ ${result.message || 'Failed to delete client from Firebase Auth'}`);
+        setMessage(
+          `❌ ${result.message || "Failed to delete client from Firebase Auth"}`
+        );
         console.error("Auth deletion failed:", result);
       }
-      
+
       setTimeout(() => setMessage(""), 5000);
       closeDeleteModal();
       loadClients();
@@ -477,7 +513,7 @@ const SuperAdminDashboardAPI = () => {
 
   const toggleClientStatus = async (clientId, currentIsActive) => {
     try {
-      const superadminId = "u1JiUOCTXxaOkoK83AFH";
+      const superadminId = "1nXphRXcXR4h99bneWyw";
       const newIsActive = !currentIsActive;
       const newStatus = newIsActive ? "active" : "inactive";
 
@@ -542,7 +578,7 @@ const SuperAdminDashboardAPI = () => {
   const fetchClientDetails = async (clientId, client = selectedClient) => {
     try {
       setLoadingDetails(true);
-      const superadminId = "u1JiUOCTXxaOkoK83AFH";
+      const superadminId = "1nXphRXcXR4h99bneWyw";
 
       // Fetch users from global users collection filtered by created_by
       let users = [];
