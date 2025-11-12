@@ -26,6 +26,7 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   deleteUser,
+  signInWithEmailAndPassword,
 } from "firebase/auth";
 import { db, auth } from "../../../firebase";
 import {
@@ -339,27 +340,52 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
     if (userToDelete) {
       try {
         setLoading(true);
+        
+        // Store current user to protect it
+        const currentUser = auth.currentUser;
+        
+        // Verify we're not deleting the current user
+        if (currentUser && currentUser.uid === userToDelete.id) {
+          setMessage("❌ Cannot delete currently logged-in user!");
+          setTimeout(() => setMessage(""), 5000);
+          return;
+        }
 
         let authDeleted = false;
         let firestoreDeleted = false;
 
-        // Delete from Firebase Auth using secondary auth (admin privileges)
+        // Try backend deletion first
         try {
-          await deleteUser(
-            secondaryAuth.currentUser || { uid: userToDelete.id }
+          const response = await fetch(
+            `${import.meta.env.VITE_API_BASE_URL}/api/delete-user/${userToDelete.id}`,
+            {
+              method: "DELETE",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
           );
-          authDeleted = true;
-          console.log("User deleted from Firebase Auth");
-        } catch (authError) {
-          console.warn("Firebase Auth deletion failed:", authError);
+          
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+              authDeleted = true;
+              console.log("User deleted from Firebase Auth via backend");
+            }
+          }
+        } catch (backendError) {
+          console.log("Backend deletion failed, trying client-side...");
         }
 
-        // Delete from Firestore
+        // Delete from Firestore (always do this)
         try {
-          const userRef = doc(db, "users", userToDelete.id);
-          await deleteDoc(userRef);
-          firestoreDeleted = true;
-          console.log("User deleted from Firestore");
+          // Verify the user ID matches before deletion
+          if (userToDelete.id) {
+            const userRef = doc(db, "users", userToDelete.id);
+            await deleteDoc(userRef);
+            firestoreDeleted = true;
+            console.log(`User ${userToDelete.id} deleted from Firestore`);
+          }
         } catch (firestoreError) {
           console.error("Firestore deletion failed:", firestoreError);
         }

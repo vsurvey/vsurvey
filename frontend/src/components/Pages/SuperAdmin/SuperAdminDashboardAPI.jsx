@@ -302,44 +302,70 @@ const SuperAdminDashboardAPI = () => {
       console.log("Client ID:", clientToDelete.id);
       console.log("Firebase UID:", clientToDelete.firebaseUid);
 
-      // Ensure SuperAdmin is authenticated with Firebase Auth
-      let user = auth.currentUser;
-      if (!user || user.email !== "superadmin@vsurvey.com") {
-        console.log("SuperAdmin not authenticated, signing in...");
-        try {
-          const userCredential = await signInWithEmailAndPassword(
-            auth,
-            "superadmin@vsurvey.com",
-            "superadmin123"
-          );
-          user = userCredential.user;
-          console.log("SuperAdmin authenticated successfully");
-        } catch (authError) {
-          console.error("Failed to authenticate SuperAdmin:", authError);
-          throw new Error(
-            "Authentication failed - please check SuperAdmin credentials"
-          );
+      // Try to delete from Firebase Auth using backend
+      const superadminId = "1nXphRXcXR4h99bneWyw";
+      let authDeleted = false;
+      
+      try {
+        console.log("Attempting to delete Firebase Auth user via backend...");
+        const response = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/api/delete-user/${clientToDelete.firebaseUid || clientToDelete.id}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            console.log("✅ Firebase Auth user deleted via backend");
+            authDeleted = true;
+          }
+        }
+      } catch (backendError) {
+        console.log("Backend not available, trying client-side deletion...");
+        
+        // Fallback: Try client-side deletion with temp password
+        if (clientToDelete.tempPassword) {
+          try {
+            // Store current user before deletion
+            const currentUser = auth.currentUser;
+            
+            const clientCredential = await signInWithEmailAndPassword(
+              secondaryAuth,
+              clientToDelete.email,
+              clientToDelete.tempPassword
+            );
+            
+            // Verify we're deleting the correct user
+            if (clientCredential.user.uid === (clientToDelete.firebaseUid || clientToDelete.id)) {
+              await deleteUser(clientCredential.user);
+              console.log("✅ Firebase Auth user deleted client-side");
+              authDeleted = true;
+            } else {
+              console.error("UID mismatch - deletion aborted for safety");
+            }
+            
+            // Re-authenticate as SuperAdmin only if we're not already
+            if (!currentUser || currentUser.email !== "superadmin@vsurvey.com") {
+              await signInWithEmailAndPassword(
+                auth,
+                "superadmin@vsurvey.com",
+                "superadmin123"
+              );
+            }
+          } catch (authError) {
+            console.error("Client-side deletion failed:", authError);
+          }
         }
       }
-
-      const token = await user.getIdToken();
-
-      // Use existing legacy delete endpoint
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/delete-user/${clientToDelete.firebaseUid || clientToDelete.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        // Now delete from Firestore (since legacy endpoint only deletes from Auth)
-        const superadminId = "1nXphRXcXR4h99bneWyw";
+      
+      if (!authDeleted) {
+        console.log("⚠️ Firebase Auth user will remain (all deletion methods failed)");
+      }
 
         // Delete all users created by this client
         const globalUsersRef = collection(db, "users");
@@ -426,15 +452,10 @@ const SuperAdminDashboardAPI = () => {
         await deleteDoc(clientDocRef);
         console.log("✅ Client document deleted from Firestore");
 
+        const authMessage = authDeleted ? "and Firebase Auth" : "(Firebase Auth user remains)";
         setMessage(
-          "✅ Client and all associated data deleted successfully from both Auth and Database!"
+          `✅ Client deleted successfully from Firestore ${authMessage}!`
         );
-      } else {
-        setMessage(
-          `❌ ${result.message || "Failed to delete client from Firebase Auth"}`
-        );
-        console.error("Auth deletion failed:", result);
-      }
 
       setTimeout(() => setMessage(""), 5000);
       closeDeleteModal();

@@ -5,8 +5,8 @@ A comprehensive survey management platform with multi-tenant architecture suppor
 ## 🚀 Live Demo
 
 - **Frontend**: https://v-survey-app.netlify.app/
-- **Backend API**: https://v-survey-backend.onrender.com
-- **API Documentation**: https://v-survey-backend.onrender.com/docs
+- **Backend API**: https://vsurvey-backend.onrender.com
+- **API Documentation**: https://vsurvey-backend.onrender.com/docs
 
 ## 🏗️ Architecture
 
