@@ -4,20 +4,20 @@ FROM python:3.10-slim
 # Set working directory
 WORKDIR /app
 
-# Copy requirements and install
+# Copy requirements and install dependencies
 COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy all backend code
+# Copy all backend source code
 COPY . .
 
-# Expose the port Render sets
-ENV PORT 8000
-EXPOSE $PORT
+# Expose port (Render will set $PORT automatically)
+ENV PORT=8000
+EXPOSE 8000
 
-# Set environment variable for unbuffered output (logs in real-time)
+# Ensure real-time logs
 ENV PYTHONUNBUFFERED=1
 
-# Run the app with uvicorn (shell form so $PORT works)
-CMD uvicorn main:app --host 0.0.0.0 --port $PORT
+# Start FastAPI server
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT}"]
