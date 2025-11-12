@@ -14,7 +14,7 @@ The migration involves:
 ## 🔧 Step-by-Step Migration
 
 ### Step 1: Backend Setup
-
+  
 1. **Install Backend Dependencies**
    ```bash
    cd backend
