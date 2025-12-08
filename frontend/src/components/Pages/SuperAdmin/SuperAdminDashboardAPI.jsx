@@ -79,7 +79,7 @@ const SuperAdminDashboardAPI = () => {
 
   // Load clients from Firebase with real-time listener for status changes only
   useEffect(() => {
-    const superadminId = "1nXphRXcXR4h99bneWyw";
+    const superadminId = "hdXje7ZvCbj7eOugVLiZ";
     const clientsRef = collection(db, "superadmin", superadminId, "clients");
 
     // Set up real-time listener only for status field changes
@@ -120,8 +120,8 @@ const SuperAdminDashboardAPI = () => {
   const loadClients = async () => {
     try {
       setLoading(true);
-      // Get clients from Firebase structure: superadmin/1nXphRXcXR4h99bneWyw/clients
-      const superadminId = "1nXphRXcXR4h99bneWyw";
+      // Get clients from Firebase structure: superadmin/hdXje7ZvCbj7eOugVLiZ/clients
+      const superadminId = "hdXje7ZvCbj7eOugVLiZ";
       const clientsRef = collection(db, "superadmin", superadminId, "clients");
       const snapshot = await getDocs(clientsRef);
 
@@ -192,7 +192,7 @@ const SuperAdminDashboardAPI = () => {
       console.log("Password reset email sent successfully");
 
       // Create client document using Firebase UID as document ID
-      const superadminId = "1nXphRXcXR4h99bneWyw";
+      const superadminId = "hdXje7ZvCbj7eOugVLiZ";
       const clientDocRef = doc(
         db,
         "superadmin",
@@ -270,7 +270,7 @@ const SuperAdminDashboardAPI = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      const superadminId = "1nXphRXcXR4h99bneWyw";
+      const superadminId = "hdXje7ZvCbj7eOugVLiZ";
       await updateDoc(
         doc(db, "superadmin", superadminId, "clients", editingClient.id),
         { company_name: editFormData.name.trim() }
@@ -303,9 +303,9 @@ const SuperAdminDashboardAPI = () => {
       console.log("Firebase UID:", clientToDelete.firebaseUid);
 
       // Try to delete from Firebase Auth using backend
-      const superadminId = "1nXphRXcXR4h99bneWyw";
+      const superadminId = "hdXje7ZvCbj7eOugVLiZ";
       let authDeleted = false;
-      
+
       try {
         console.log("Attempting to delete Firebase Auth user via backend...");
         const response = await fetch(
@@ -317,7 +317,7 @@ const SuperAdminDashboardAPI = () => {
             },
           }
         );
-        
+
         if (response.ok) {
           const result = await response.json();
           if (result.success) {
@@ -327,30 +327,36 @@ const SuperAdminDashboardAPI = () => {
         }
       } catch (backendError) {
         console.log("Backend not available, trying client-side deletion...");
-        
+
         // Fallback: Try client-side deletion with temp password
         if (clientToDelete.tempPassword) {
           try {
             // Store current user before deletion
             const currentUser = auth.currentUser;
-            
+
             const clientCredential = await signInWithEmailAndPassword(
               secondaryAuth,
               clientToDelete.email,
               clientToDelete.tempPassword
             );
-            
+
             // Verify we're deleting the correct user
-            if (clientCredential.user.uid === (clientToDelete.firebaseUid || clientToDelete.id)) {
+            if (
+              clientCredential.user.uid ===
+              (clientToDelete.firebaseUid || clientToDelete.id)
+            ) {
               await deleteUser(clientCredential.user);
               console.log("✅ Firebase Auth user deleted client-side");
               authDeleted = true;
             } else {
               console.error("UID mismatch - deletion aborted for safety");
             }
-            
+
             // Re-authenticate as SuperAdmin only if we're not already
-            if (!currentUser || currentUser.email !== "superadmin@vsurvey.com") {
+            if (
+              !currentUser ||
+              currentUser.email !== "superadmin@vsurvey.com"
+            ) {
               await signInWithEmailAndPassword(
                 auth,
                 "superadmin@vsurvey.com",
@@ -362,100 +368,104 @@ const SuperAdminDashboardAPI = () => {
           }
         }
       }
-      
+
       if (!authDeleted) {
-        console.log("⚠️ Firebase Auth user will remain (all deletion methods failed)");
+        console.log(
+          "⚠️ Firebase Auth user will remain (all deletion methods failed)"
+        );
       }
 
-        // Delete all users created by this client
-        const globalUsersRef = collection(db, "users");
-        const globalUsersSnapshot = await getDocs(globalUsersRef);
-        const userDeletePromises = [];
+      // Delete all users created by this client
+      const globalUsersRef = collection(db, "users");
+      const globalUsersSnapshot = await getDocs(globalUsersRef);
+      const userDeletePromises = [];
 
-        globalUsersSnapshot.forEach((userDoc) => {
-          const userData = userDoc.data();
-          if (userData.created_by === clientToDelete.email) {
-            userDeletePromises.push(deleteDoc(doc(db, "users", userDoc.id)));
-          }
-        });
+      globalUsersSnapshot.forEach((userDoc) => {
+        const userData = userDoc.data();
+        if (userData.created_by === clientToDelete.email) {
+          userDeletePromises.push(deleteDoc(doc(db, "users", userDoc.id)));
+        }
+      });
 
-        await Promise.all(userDeletePromises);
-        console.log(`✅ Deleted ${userDeletePromises.length} users`);
+      await Promise.all(userDeletePromises);
+      console.log(`✅ Deleted ${userDeletePromises.length} users`);
 
-        // Delete all surveys for this client
-        const surveysRef = collection(
-          db,
-          "superadmin",
-          superadminId,
-          "clients",
-          clientToDelete.id,
-          "surveys"
-        );
-        const surveysSnapshot = await getDocs(surveysRef);
-        const surveyDeletePromises = [];
+      // Delete all surveys for this client
+      const surveysRef = collection(
+        db,
+        "superadmin",
+        superadminId,
+        "clients",
+        clientToDelete.id,
+        "surveys"
+      );
+      const surveysSnapshot = await getDocs(surveysRef);
+      const surveyDeletePromises = [];
 
-        surveysSnapshot.forEach((surveyDoc) => {
-          surveyDeletePromises.push(deleteDoc(surveyDoc.ref));
-        });
+      surveysSnapshot.forEach((surveyDoc) => {
+        surveyDeletePromises.push(deleteDoc(surveyDoc.ref));
+      });
 
-        await Promise.all(surveyDeletePromises);
-        console.log(`✅ Deleted ${surveyDeletePromises.length} surveys`);
+      await Promise.all(surveyDeletePromises);
+      console.log(`✅ Deleted ${surveyDeletePromises.length} surveys`);
 
-        // Delete all questions for this client
-        const questionsRef = collection(
-          db,
-          "superadmin",
-          superadminId,
-          "clients",
-          clientToDelete.id,
-          "questions"
-        );
-        const questionsSnapshot = await getDocs(questionsRef);
-        const questionDeletePromises = [];
+      // Delete all questions for this client
+      const questionsRef = collection(
+        db,
+        "superadmin",
+        superadminId,
+        "clients",
+        clientToDelete.id,
+        "questions"
+      );
+      const questionsSnapshot = await getDocs(questionsRef);
+      const questionDeletePromises = [];
 
-        questionsSnapshot.forEach((questionDoc) => {
-          questionDeletePromises.push(deleteDoc(questionDoc.ref));
-        });
+      questionsSnapshot.forEach((questionDoc) => {
+        questionDeletePromises.push(deleteDoc(questionDoc.ref));
+      });
 
-        await Promise.all(questionDeletePromises);
-        console.log(`✅ Deleted ${questionDeletePromises.length} questions`);
+      await Promise.all(questionDeletePromises);
+      console.log(`✅ Deleted ${questionDeletePromises.length} questions`);
 
-        // Delete all survey assignments for this client
-        const assignmentsRef = collection(
-          db,
-          "superadmin",
-          superadminId,
-          "clients",
-          clientToDelete.id,
-          "survey_assignments"
-        );
-        const assignmentsSnapshot = await getDocs(assignmentsRef);
-        const assignmentDeletePromises = [];
+      // Delete all survey assignments for this client
+      const assignmentsRef = collection(
+        db,
+        "superadmin",
+        superadminId,
+        "clients",
+        clientToDelete.id,
+        "survey_assignments"
+      );
+      const assignmentsSnapshot = await getDocs(assignmentsRef);
+      const assignmentDeletePromises = [];
 
-        assignmentsSnapshot.forEach((assignmentDoc) => {
-          assignmentDeletePromises.push(deleteDoc(assignmentDoc.ref));
-        });
+      assignmentsSnapshot.forEach((assignmentDoc) => {
+        assignmentDeletePromises.push(deleteDoc(assignmentDoc.ref));
+      });
 
-        await Promise.all(assignmentDeletePromises);
-        console.log(
-          `✅ Deleted ${assignmentDeletePromises.length} survey assignments`
-        );
+      await Promise.all(assignmentDeletePromises);
+      console.log(
+        `✅ Deleted ${assignmentDeletePromises.length} survey assignments`
+      );
 
-        // Delete client document
-        const clientDocRef = doc(
-          db,
-          "superadmin",
-          superadminId,
-          "clients",
-          clientToDelete.id
-        );
-        await deleteDoc(clientDocRef);
-        console.log("✅ Client document deleted from Firestore");
+      // Delete client document
+      const clientDocRef = doc(
+        db,
+        "superadmin",
+        superadminId,
+        "clients",
+        clientToDelete.id
+      );
+      await deleteDoc(clientDocRef);
+      console.log("✅ Client document deleted from Firestore");
 
-        const authMessage = authDeleted ? "and Firebase Auth" : "(Firebase Auth user remains)";
-        setMessage(
-          `✅ Client deleted successfully from Firestore ${authMessage}!`
-        );
+      const authMessage = authDeleted
+        ? "and Firebase Auth"
+        : "(Firebase Auth user remains)";
+      setMessage(
+        `✅ Client deleted successfully from Firestore ${authMessage}!`
+      );
 
       setTimeout(() => setMessage(""), 5000);
       closeDeleteModal();
@@ -534,7 +544,7 @@ const SuperAdminDashboardAPI = () => {
 
   const toggleClientStatus = async (clientId, currentIsActive) => {
     try {
-      const superadminId = "1nXphRXcXR4h99bneWyw";
+      const superadminId = "hdXje7ZvCbj7eOugVLiZ";
       const newIsActive = !currentIsActive;
       const newStatus = newIsActive ? "active" : "inactive";
 
@@ -599,7 +609,7 @@ const SuperAdminDashboardAPI = () => {
   const fetchClientDetails = async (clientId, client = selectedClient) => {
     try {
       setLoadingDetails(true);
-      const superadminId = "1nXphRXcXR4h99bneWyw";
+      const superadminId = "hdXje7ZvCbj7eOugVLiZ";
 
       // Fetch users from global users collection filtered by created_by
       let users = [];

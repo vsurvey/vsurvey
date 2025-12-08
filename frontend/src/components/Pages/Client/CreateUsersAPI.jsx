@@ -79,7 +79,7 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
   const getClientData = async (clientEmail) => {
     try {
       console.log("Searching for client with email:", clientEmail);
-      const superadminId = "1nXphRXcXR4h99bneWyw";
+      const superadminId = "hdXje7ZvCbj7eOugVLiZ";
       const clientsRef = collection(db, "superadmin", superadminId, "clients");
       const q = query(clientsRef, where("email", "==", clientEmail));
       const clientsSnapshot = await getDocs(q);
@@ -203,7 +203,7 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
   console.log("Using clientId:", clientId);
   console.log("Profile:", profile);
   console.log(
-    "Database path will be: superadmin/1nXphRXcXR4h99bneWyw/clients/" +
+    "Database path will be: superadmin/hdXje7ZvCbj7eOugVLiZ/clients/" +
       clientId +
       "/users"
   );
@@ -340,10 +340,10 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
     if (userToDelete) {
       try {
         setLoading(true);
-        
+
         // Store current user to protect it
         const currentUser = auth.currentUser;
-        
+
         // Verify we're not deleting the current user
         if (currentUser && currentUser.uid === userToDelete.id) {
           setMessage("❌ Cannot delete currently logged-in user!");
@@ -365,7 +365,7 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
               },
             }
           );
-          
+
           if (response.ok) {
             const result = await response.json();
             if (result.success) {

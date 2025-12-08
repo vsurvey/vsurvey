@@ -73,7 +73,7 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
       const clientsRef = collection(
         db,
         "superadmin",
-        "1nXphRXcXR4h99bneWyw",
+        "hdXje7ZvCbj7eOugVLiZ",
         "clients"
       );
       const snapshot = await getDocs(clientsRef);
@@ -115,7 +115,7 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
       const surveysRef = collection(
         db,
         "superadmin",
-        "1nXphRXcXR4h99bneWyw",
+        "hdXje7ZvCbj7eOugVLiZ",
         "clients",
         clientId,
         "surveys"
@@ -150,7 +150,7 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
     const responsesRef = collection(
       db,
       "superadmin",
-      "1nXphRXcXR4h99bneWyw",
+      "hdXje7ZvCbj7eOugVLiZ",
       "clients",
       clientId,
       "surveys",
@@ -166,7 +166,7 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
         const surveyResponsesRef = collection(
           db,
           "superadmin",
-          "1nXphRXcXR4h99bneWyw",
+          "hdXje7ZvCbj7eOugVLiZ",
           "clients",
           clientId,
           "surveys",
@@ -191,7 +191,7 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
       const surveysRef = collection(
         db,
         "superadmin",
-        "1nXphRXcXR4h99bneWyw",
+        "hdXje7ZvCbj7eOugVLiZ",
         "clients",
         clientId,
         "surveys"
@@ -219,7 +219,7 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
       const responsesRef = collection(
         db,
         "superadmin",
-        "1nXphRXcXR4h99bneWyw",
+        "hdXje7ZvCbj7eOugVLiZ",
         "clients",
         clientId,
         "surveys",
@@ -246,7 +246,7 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
           const questionRef = doc(
             db,
             "superadmin",
-            "1nXphRXcXR4h99bneWyw",
+            "hdXje7ZvCbj7eOugVLiZ",
             "clients",
             clientId,
             "questions",

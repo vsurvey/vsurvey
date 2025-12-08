@@ -28,7 +28,7 @@ export const activateClientAdmin = async (email) => {
     console.log("Activating client admin:", email);
 
     // Find the client admin by email
-    const superadminId = "1nXphRXcXR4h99bneWyw";
+    const superadminId = "hdXje7ZvCbj7eOugVLiZ";
     const clientsRef = collection(db, "superadmin", superadminId, "clients");
     const q = query(clientsRef, where("email", "==", email));
     const snapshot = await getDocs(q);
@@ -76,7 +76,7 @@ export const activateClientAdmin = async (email) => {
  */
 export const getClientAdminStatus = async (email) => {
   try {
-    const superadminId = "1nXphRXcXR4h99bneWyw";
+    const superadminId = "hdXje7ZvCbj7eOugVLiZ";
     const clientsRef = collection(db, "superadmin", superadminId, "clients");
     const q = query(clientsRef, where("email", "==", email));
     const snapshot = await getDocs(q);
@@ -120,7 +120,7 @@ export const isClientAdminActive = async (email) => {
  */
 export const isClientAdminDeactivated = async (email) => {
   try {
-    const superadminId = "1nXphRXcXR4h99bneWyw";
+    const superadminId = "hdXje7ZvCbj7eOugVLiZ";
     const clientsRef = collection(db, "superadmin", superadminId, "clients");
     const q = query(clientsRef, where("email", "==", email));
     const snapshot = await getDocs(q);
@@ -144,7 +144,7 @@ export const isClientAdminDeactivated = async (email) => {
  */
 export const needsProfileSetup = async (email) => {
   try {
-    const superadminId = "1nXphRXcXR4h99bneWyw";
+    const superadminId = "hdXje7ZvCbj7eOugVLiZ";
     const clientsRef = collection(db, "superadmin", superadminId, "clients");
     const q = query(clientsRef, where("email", "==", email));
     const snapshot = await getDocs(q);
@@ -169,7 +169,7 @@ export const needsProfileSetup = async (email) => {
  */
 export const completeProfileSetup = async (email, profileData) => {
   try {
-    const superadminId = "1nXphRXcXR4h99bneWyw";
+    const superadminId = "hdXje7ZvCbj7eOugVLiZ";
     const clientsRef = collection(db, "superadmin", superadminId, "clients");
     const q = query(clientsRef, where("email", "==", email));
     const snapshot = await getDocs(q);

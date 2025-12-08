@@ -29,7 +29,7 @@ const startClientStatusMonitoring = (email, onLogout) => {
   if (statusListener) {
     statusListener();
   }
-  const superadminId = "1nXphRXcXR4h99bneWyw";
+  const superadminId = "hdXje7ZvCbj7eOugVLiZ";
   const clientsRef = collection(db, "superadmin", superadminId, "clients");
   const q = query(clientsRef, where("email", "==", email));
 
@@ -210,7 +210,7 @@ function App() {
         const checkProfileSetup = async () => {
           setIsCheckingProfile(true);
           try {
-            const superadminId = "1nXphRXcXR4h99bneWyw";
+            const superadminId = "hdXje7ZvCbj7eOugVLiZ";
             const clientsRef = collection(
               db,
               "superadmin",

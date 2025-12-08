@@ -29,7 +29,7 @@ const SurveyResults = () => {
       const clientsRef = collection(
         db,
         "superadmin",
-        "1nXphRXcXR4h99bneWyw",
+        "hdXje7ZvCbj7eOugVLiZ",
         "clients"
       );
       const snapshot = await getDocs(clientsRef);
@@ -44,7 +44,7 @@ const SurveyResults = () => {
         const surveysRef = collection(
           db,
           "superadmin",
-          "1nXphRXcXR4h99bneWyw",
+          "hdXje7ZvCbj7eOugVLiZ",
           "clients",
           doc.id,
           "surveys"
@@ -58,7 +58,7 @@ const SurveyResults = () => {
           const surveyResponsesRef = collection(
             db,
             "superadmin",
-            "1nXphRXcXR4h99bneWyw",
+            "hdXje7ZvCbj7eOugVLiZ",
             "clients",
             doc.id,
             "surveys",
@@ -103,7 +103,7 @@ const SurveyResults = () => {
           const surveysRef = collection(
             db,
             "superadmin",
-            "1nXphRXcXR4h99bneWyw",
+            "hdXje7ZvCbj7eOugVLiZ",
             "clients",
             clientId,
             "surveys"
@@ -118,7 +118,7 @@ const SurveyResults = () => {
             const surveyResponsesRef = collection(
               db,
               "superadmin",
-              "1nXphRXcXR4h99bneWyw",
+              "hdXje7ZvCbj7eOugVLiZ",
               "clients",
               clientId,
               "surveys",

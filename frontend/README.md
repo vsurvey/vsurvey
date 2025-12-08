@@ -290,11 +290,11 @@ Authorization: Bearer <firebase-jwt-token>
 
 ### Collections in Firestore
 
-1. **superadmin/1nXphRXcXR4h99bneWyw/clients** - Client admin profiles
+1. **superadmin/hdXje7ZvCbj7eOugVLiZ/clients** - Client admin profiles
 2. **users** - Survey participants (global collection)
-3. **superadmin/1nXphRXcXR4h99bneWyw/clients/{clientId}/questions** - Survey questions
-4. **superadmin/1nXphRXcXR4h99bneWyw/clients/{clientId}/surveys** - Survey definitions
-5. **superadmin/1nXphRXcXR4h99bneWyw/clients/{clientId}/assignments** - Survey assignments
+3. **superadmin/hdXje7ZvCbj7eOugVLiZ/clients/{clientId}/questions** - Survey questions
+4. **superadmin/hdXje7ZvCbj7eOugVLiZ/clients/{clientId}/surveys** - Survey definitions
+5. **superadmin/hdXje7ZvCbj7eOugVLiZ/clients/{clientId}/assignments** - Survey assignments
 6. **survey_responses** - User responses (future feature)
 
 ## 🚀 Deployment
