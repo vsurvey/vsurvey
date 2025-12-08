@@ -33,6 +33,13 @@ const Login = ({ onLogin }) => {
       // Use Firebase authentication for client admins
       const result = await authService.signIn(email, password)
       
+      if (!result.success) {
+        setErrorMessage('Invalid email or password')
+        setTimeout(() => setErrorMessage(''), 5000)
+        setIsLoading(false)
+        return
+      }
+      
       if (result.success) {
         // Store fresh token for API calls
         const token = await result.user.getIdToken(true)
@@ -78,27 +85,11 @@ const Login = ({ onLogin }) => {
           console.log('DEBUG: Regular user exists:', regularUserExists)
           
           if (regularUserExists) {
-            // Check if user is pending and activate them
-            console.log('DEBUG: Checking if user is pending:', email)
-            const isUserPendingStatus = await isUserPending(email)
-            console.log('DEBUG: User is pending:', isUserPendingStatus)
-            
-            if (isUserPendingStatus) {
-              console.log('DEBUG: Attempting to activate user:', email)
-              const userActivated = await activateUser(email)
-              console.log('DEBUG: User activation result:', userActivated)
-              
-              if (userActivated) {
-                console.log('✅ User activated successfully:', email)
-                // Get fresh token after activation
-                const freshToken = await result.user.getIdToken(true)
-                localStorage.setItem('firebaseToken', freshToken)
-              } else {
-                console.log('❌ Failed to activate user:', email)
-              }
-            } else {
-              console.log('DEBUG: User is not pending, current status unknown')
-            }
+            // Regular users cannot log in on web
+            setErrorMessage('This account is for mobile app only. Please use the mobile app to log in.')
+            setTimeout(() => setErrorMessage(''), 5000)
+            setIsLoading(false)
+            return
           } else {
             console.log('❌ User not found in database:', email)
           }
@@ -126,8 +117,8 @@ const Login = ({ onLogin }) => {
         }, 1500)
       }
     } catch (error) {
-      setErrorMessage('Invalid email or password: ' + error.message)
-    } finally {
+      setErrorMessage('Invalid email or password')
+      setTimeout(() => setErrorMessage(''), 5000)
       setIsLoading(false)
     }
   }
@@ -177,13 +168,13 @@ const Login = ({ onLogin }) => {
                   <p className="text-gray-600">Sign in to access your dashboard</p>
                   
                   {/* Admin Credentials Display */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mt-4 text-left">
+                  {/* <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mt-4 text-left">
                     <h3 className="text-xs font-semibold text-blue-800 mb-1">Super Admin Access:</h3>
                     <div className="text-xs text-blue-700 space-y-1">
                       <p><strong>Email:</strong> superadmin@vsurvey.com</p>
                       <p><strong>Password:</strong> superadmin123</p>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -215,7 +206,7 @@ const Login = ({ onLogin }) => {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  {/* <div className="flex items-center justify-between">
                     <label className="flex items-center space-x-2 cursor-pointer text-gray-600 hover:text-gray-800 transition-colors">
                       <input type="checkbox" className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                       <span className="text-sm">Remember me</span>
@@ -223,7 +214,13 @@ const Login = ({ onLogin }) => {
                     <a href="#" className="text-sm text-blue-600 hover:text-blue-700 transition-colors">
                       Forgot password?
                     </a>
-                  </div>
+                  </div> */}
+
+                  {errorMessage && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-md text-center">
+                      <p className="text-sm text-red-600">{errorMessage}</p>
+                    </div>
+                  )}
 
                   <Button 
                     type="submit" 
@@ -241,20 +238,14 @@ const Login = ({ onLogin }) => {
                   </Button>
                 </form>
 
-                {errorMessage && (
-                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-center">
-                    <p className="text-sm text-red-600">{errorMessage}</p>
-                  </div>
-                )}
-
-                <div className="mt-8 text-center">
+                {/* <div className="mt-8 text-center">
                   <p className="text-sm text-gray-500">
                     Need access? 
                     <a href="#" className="text-blue-600 hover:text-blue-700 font-medium transition-colors">
                       Contact your administrator
                     </a>
                   </p>
-                </div>
+                </div> */}
               </CardContent>
             </Card>
           </div>

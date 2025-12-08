@@ -696,6 +696,82 @@ const SuperAdminDashboardAPI = () => {
               </p>
             </div>
 
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Total Clients
+                      </p>
+                      <p className="text-2xl font-bold">
+                        {clientAdmins.length}
+                      </p>
+                    </div>
+                    <Building className="w-8 h-8 text-blue-500" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Active Clients
+                      </p>
+                      <p className="text-2xl font-bold">
+                        {
+                          clientAdmins.filter((c) => c.status === "active")
+                            .length
+                        }
+                      </p>
+                    </div>
+                    <UserCheck className="w-8 h-8 text-green-500" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Pending Clients
+                      </p>
+                      <p className="text-2xl font-bold">
+                        {
+                          clientAdmins.filter((c) => c.status === "pending")
+                            .length
+                        }
+                      </p>
+                    </div>
+                    <Mail className="w-8 h-8 text-yellow-500" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Inactive Clients
+                      </p>
+                      <p className="text-2xl font-bold">
+                        {
+                          clientAdmins.filter((c) => c.status === "inactive")
+                            .length
+                        }
+                      </p>
+                    </div>
+                    <UserX className="w-8 h-8 text-red-500" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
             {message && (
               <div
                 className={`mb-6 p-4 rounded-md ${
@@ -896,81 +972,7 @@ const SuperAdminDashboardAPI = () => {
               </Card>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Total Clients
-                      </p>
-                      <p className="text-2xl font-bold">
-                        {clientAdmins.length}
-                      </p>
-                    </div>
-                    <Building className="w-8 h-8 text-blue-500" />
-                  </div>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Active Clients
-                      </p>
-                      <p className="text-2xl font-bold">
-                        {
-                          clientAdmins.filter((c) => c.status === "active")
-                            .length
-                        }
-                      </p>
-                    </div>
-                    <UserCheck className="w-8 h-8 text-green-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Pending Clients
-                      </p>
-                      <p className="text-2xl font-bold">
-                        {
-                          clientAdmins.filter((c) => c.status === "pending")
-                            .length
-                        }
-                      </p>
-                    </div>
-                    <Mail className="w-8 h-8 text-yellow-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Inactive Clients
-                      </p>
-                      <p className="text-2xl font-bold">
-                        {
-                          clientAdmins.filter((c) => c.status === "inactive")
-                            .length
-                        }
-                      </p>
-                    </div>
-                    <UserX className="w-8 h-8 text-red-500" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
           </>
         );
       case "results":

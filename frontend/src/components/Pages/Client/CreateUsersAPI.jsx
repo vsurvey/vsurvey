@@ -289,10 +289,12 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
       setMessage(
         `✅ User created successfully! Password setup email sent to ${formData.email.trim()}`
       );
+      setError(null);
       setTimeout(() => setMessage(""), 8000);
     } catch (err) {
-      setMessage(`❌ Failed to create user: ${err.message}`);
-      setTimeout(() => setMessage(""), 8000);
+      const errorMsg = err.message.replace(/Firebase: Error \(auth\//gi, '').replace(/\)/g, '').replace(/Firebase:/gi, '').trim();
+      setError(`❌ Failed to create user: ${errorMsg}`);
+      setTimeout(() => setError(null), 8000);
     } finally {
       setLoading(false);
     }
@@ -391,12 +393,8 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
         }
 
         // Show appropriate message
-        if (authDeleted && firestoreDeleted) {
-          setMessage("✅ User deleted from both Authentication and Database!");
-        } else if (firestoreDeleted) {
-          setMessage(
-            "✅ User deleted from Database. Authentication deletion may have failed."
-          );
+        if (firestoreDeleted) {
+          setMessage("✅ User deleted successfully!");
         } else {
           setMessage("❌ Failed to delete user.");
         }
@@ -457,7 +455,7 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
 
   const createFirebaseUser = async (email) => {
     try {
-      console.log("Creating Firebase user for:", email);
+      console.log("Creating user for:", email);
       const tempPassword = `Temp${Date.now()}!`;
       const userCredential = await createUserWithEmailAndPassword(
         secondaryAuth,
@@ -470,12 +468,12 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
       console.log("Password reset email sent");
 
       setMessage(
-        `✅ Firebase user created and password setup email sent to ${email}`
+        `✅ User created and password setup email sent to ${email}`
       );
       setTimeout(() => setMessage(""), 8000);
     } catch (error) {
-      console.error("Error creating Firebase user:", error);
-      if (error.code === "auth/email-already-in-use") {
+      console.error("Error creating user:", error);
+      if (error.code === "email-already-in-use") {
         await resendPasswordEmail(email);
       } else {
         setMessage(`❌ Failed to create user: ${error.message}`);
@@ -493,11 +491,11 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
       setTimeout(() => setMessage(""), 5000);
     } catch (error) {
       console.error("Error sending password reset email:", error);
-      if (error.code === "auth/user-not-found") {
+      if (error.code === "user-not-found") {
         setMessage(
           `❌ User ${email} not found in Firebase Auth. Please create the user first.`
         );
-      } else if (error.code === "auth/invalid-email") {
+      } else if (error.code === "invalid-email") {
         setMessage(`❌ Invalid email address: ${email}`);
       } else {
         setMessage(`❌ Failed to send email: ${error.message}`);
@@ -514,6 +512,71 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
           <p className="text-gray-600 mt-2">
             Create and manage survey participants
           </p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Users
+                  </p>
+                  <p className="text-2xl font-bold">{users.length}</p>
+                </div>
+                <Users className="w-8 h-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Active Users
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {users.filter((u) => u.status === "active").length}
+                  </p>
+                </div>
+                <UserCheck className="w-8 h-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Pending Users
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {users.filter((u) => u.status === "pending").length}
+                  </p>
+                </div>
+                <Mail className="w-8 h-8 text-yellow-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Inactive Users
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {users.filter((u) => u.status === "inactive").length}
+                  </p>
+                </div>
+                <UserX className="w-8 h-8 text-red-500" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {(message || error) && (
@@ -707,70 +770,7 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
           </Card>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Total Users
-                  </p>
-                  <p className="text-2xl font-bold">{users.length}</p>
-                </div>
-                <Users className="w-8 h-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Active Users
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {users.filter((u) => u.status === "active").length}
-                  </p>
-                </div>
-                <UserCheck className="w-8 h-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Pending Users
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {users.filter((u) => u.status === "pending").length}
-                  </p>
-                </div>
-                <Mail className="w-8 h-8 text-yellow-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Inactive Users
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {users.filter((u) => u.status === "inactive").length}
-                  </p>
-                </div>
-                <UserX className="w-8 h-8 text-red-500" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
 
       {/* Edit User Modal */}

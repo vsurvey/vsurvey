@@ -26,6 +26,11 @@ const CreateSurveysAPI = ({ profile, onProfileEdit, onLogout }) => {
   const [selectedQuestions, setSelectedQuestions] = useState([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const questionsPerPage = 10;
+  const [editSearchQuery, setEditSearchQuery] = useState("");
+  const [editCurrentPage, setEditCurrentPage] = useState(1);
 
   // Edit modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -408,18 +413,40 @@ const CreateSurveysAPI = ({ profile, onProfileEdit, onLogout }) => {
               <h3 className="text-lg font-medium mb-4">
                 Available Questions ({questions.length})
               </h3>
+              
+              {/* Search Box */}
+              <div className="mb-4">
+                <Input
+                  type="text"
+                  placeholder="Search questions..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full"
+                />
+              </div>
+
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {questions.length === 0 ? (
                   <p className="text-gray-500 text-center py-4">
                     No questions available
                   </p>
                 ) : (
-                  questions
-                    .sort(
-                      (a, b) =>
-                        new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-                    )
-                    .map((question) => (
+                  (() => {
+                    const filteredQuestions = questions
+                      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+                      .filter((q) => q.text.toLowerCase().includes(searchQuery.toLowerCase()));
+                    
+                    const totalPages = Math.ceil(filteredQuestions.length / questionsPerPage);
+                    const startIndex = (currentPage - 1) * questionsPerPage;
+                    const endIndex = startIndex + questionsPerPage;
+                    const paginatedQuestions = filteredQuestions.slice(startIndex, endIndex);
+
+                    return (
+                      <>
+                        {paginatedQuestions.map((question) => (
                       <div key={question.id} className="border rounded-lg p-3">
                         <div className="flex items-start gap-3">
                           <input
@@ -456,7 +483,45 @@ const CreateSurveysAPI = ({ profile, onProfileEdit, onLogout }) => {
                           </div>
                         </div>
                       </div>
-                    ))
+                        ))}
+                        
+                        {/* Pagination */}
+                        {filteredQuestions.length > questionsPerPage && (
+                          <div className="flex justify-center items-center gap-2 mt-4 pt-4 border-t">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                              disabled={currentPage === 1}
+                            >
+                              Previous
+                            </Button>
+                            
+                            {[...Array(totalPages)].map((_, i) => (
+                              <Button
+                                key={i + 1}
+                                variant={currentPage === i + 1 ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(i + 1)}
+                                className={currentPage === i + 1 ? "bg-blue-600" : ""}
+                              >
+                                {i + 1}
+                              </Button>
+                            ))}
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                              disabled={currentPage === totalPages}
+                            >
+                              Next
+                            </Button>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()
                 )}
               </div>
             </div>
@@ -533,28 +598,89 @@ const CreateSurveysAPI = ({ profile, onProfileEdit, onLogout }) => {
 
             <div>
               <Label>Select Questions</Label>
+              
+              {/* Search Box for Edit Modal */}
+              <div className="mb-3">
+                <Input
+                  type="text"
+                  placeholder="Search questions..."
+                  value={editSearchQuery}
+                  onChange={(e) => {
+                    setEditSearchQuery(e.target.value);
+                    setEditCurrentPage(1);
+                  }}
+                  className="w-full"
+                />
+              </div>
+
               <div className="space-y-2 max-h-60 overflow-y-auto border rounded p-3">
-                {questions
-                  .sort(
-                    (a, b) =>
-                      new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-                  )
-                  .map((question) => (
-                    <div key={question.id} className="flex items-start gap-3">
-                      <input
-                        type="checkbox"
-                        checked={editFormData.questions.includes(question.id)}
-                        onChange={() =>
-                          toggleEditQuestionSelection(question.id)
-                        }
-                        className="mt-1"
-                      />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{question.text}</p>
-                        <p className="text-xs text-gray-500">{question.type}</p>
-                      </div>
-                    </div>
-                  ))}
+                {(() => {
+                  const filteredQuestions = questions
+                    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+                    .filter((q) => q.text.toLowerCase().includes(editSearchQuery.toLowerCase()));
+                  
+                  const totalPages = Math.ceil(filteredQuestions.length / questionsPerPage);
+                  const startIndex = (editCurrentPage - 1) * questionsPerPage;
+                  const endIndex = startIndex + questionsPerPage;
+                  const paginatedQuestions = filteredQuestions.slice(startIndex, endIndex);
+
+                  return (
+                    <>
+                      {paginatedQuestions.map((question) => (
+                        <div key={question.id} className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={editFormData.questions.includes(question.id)}
+                            onChange={() => toggleEditQuestionSelection(question.id)}
+                            className="mt-1"
+                          />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{question.text}</p>
+                            <p className="text-xs text-gray-500">{question.type}</p>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {/* Pagination for Edit Modal */}
+                      {filteredQuestions.length > questionsPerPage && (
+                        <div className="flex justify-center items-center gap-2 mt-3 pt-3 border-t">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={editCurrentPage === 1}
+                            type="button"
+                          >
+                            Previous
+                          </Button>
+                          
+                          {[...Array(totalPages)].map((_, i) => (
+                            <Button
+                              key={i + 1}
+                              variant={editCurrentPage === i + 1 ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setEditCurrentPage(i + 1)}
+                              className={editCurrentPage === i + 1 ? "bg-blue-600" : ""}
+                              type="button"
+                            >
+                              {i + 1}
+                            </Button>
+                          ))}
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={editCurrentPage === totalPages}
+                            type="button"
+                          >
+                            Next
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
 
