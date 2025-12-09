@@ -14,6 +14,8 @@ import {
   UserPlus,
   UserCheck,
   UserX,
+  Search,
+  X,
 } from "lucide-react";
 import {
   Dialog,
@@ -70,6 +72,9 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
     full_name: "",
     email: "",
   });
+  const [filterTab, setFilterTab] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   // Get client ID and superadmin ID dynamically
   const [clientId, setClientId] = useState(null);
@@ -493,7 +498,7 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
       console.error("Error sending password reset email:", error);
       if (error.code === "user-not-found") {
         setMessage(
-          `❌ User ${email} not found in Firebase Auth. Please create the user first.`
+          `❌ User ${email} not found. Please create the user first.`
         );
       } else if (error.code === "invalid-email") {
         setMessage(`❌ Invalid email address: ${email}`);
@@ -504,235 +509,284 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
     }
   };
 
+  const getFilteredUsers = () => {
+    let filtered = users;
+    
+    if (filterTab === "active") {
+      filtered = users.filter(u => u.status === "active");
+    } else if (filterTab === "pending") {
+      filtered = users.filter(u => u.status === "pending");
+    } else if (filterTab === "inactive") {
+      filtered = users.filter(u => u.status === "inactive");
+    }
+
+    if (searchQuery) {
+      filtered = filtered.filter(u => 
+        u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        u.email.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    return filtered;
+  };
+
+  const filteredUsers = getFilteredUsers();
+
   return (
-    <div className="space-y-6">
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600 mt-2">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+            User Management
+          </h1>
+          <p className="text-slate-600 text-sm sm:text-base mt-1 sm:mt-2">
             Create and manage survey participants
           </p>
         </div>
+        <Button
+          onClick={() => setShowCreateForm(true)}
+          className="bg-slate-900 hover:bg-slate-800 h-10 sm:h-11 px-4 sm:px-6 w-full sm:w-auto"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add New User
+        </Button>
+      </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Total Users
-                  </p>
-                  <p className="text-2xl font-bold">{users.length}</p>
-                </div>
-                <Users className="w-8 h-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Active Users
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {users.filter((u) => u.status === "active").length}
-                  </p>
-                </div>
-                <UserCheck className="w-8 h-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Pending Users
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {users.filter((u) => u.status === "pending").length}
-                  </p>
-                </div>
-                <Mail className="w-8 h-8 text-yellow-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Inactive Users
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {users.filter((u) => u.status === "inactive").length}
-                  </p>
-                </div>
-                <UserX className="w-8 h-8 text-red-500" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {(message || error) && (
-          <div
-            className={`mb-6 p-4 rounded-md ${
-              message && (message.includes("success") || message.includes("✅"))
-                ? "bg-green-50 text-green-700"
-                : "bg-red-50 text-red-700"
-            }`}
-          >
-            <div className="flex justify-between items-center">
-              <span>{error || message}</span>
-              <button onClick={clearError} className="text-sm underline">
-                Dismiss
-              </button>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
+        <div className="bg-white p-4 sm:p-6 rounded-lg border border-slate-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-slate-500">
+                Total
+              </p>
+              <p className="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
+                {users.length}
+              </p>
+            </div>
+            <div className="bg-blue-50 p-2 sm:p-3 rounded-lg">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
             </div>
           </div>
-        )}
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Create User Form */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Plus className="w-5 h-5" />
-                Add New User
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="full_name">Full Name *</Label>
-                  <Input
-                    id="full_name"
-                    type="text"
-                    value={formData.full_name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, full_name: e.target.value })
-                    }
-                    placeholder="Enter full name"
-                    required
-                  />
-                </div>
+        <div className="bg-white p-4 sm:p-6 rounded-lg border border-slate-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-slate-500">
+                Active
+              </p>
+              <p className="text-xl sm:text-2xl font-bold text-green-600 mt-1">
+                {users.filter((u) => u.status === "active").length}
+              </p>
+            </div>
+            <div className="bg-green-50 p-2 sm:p-3 rounded-lg">
+              <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+            </div>
+          </div>
+        </div>
 
-                <div>
-                  <Label htmlFor="email">Email Address *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    placeholder="Enter email address"
-                    required
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Password setup email will be sent automatically
-                  </p>
-                </div>
+        <div className="bg-white p-4 sm:p-6 rounded-lg border border-slate-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-slate-500">
+                Pending
+              </p>
+              <p className="text-xl sm:text-2xl font-bold text-amber-600 mt-1">
+                {users.filter((u) => u.status === "pending").length}
+              </p>
+            </div>
+            <div className="bg-amber-50 p-2 sm:p-3 rounded-lg">
+              <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
+            </div>
+          </div>
+        </div>
 
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-600 hover:to-purple-700"
-                >
-                  {loading ? "Creating..." : "Create User"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+        <div className="bg-white p-4 sm:p-6 rounded-lg border border-slate-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-slate-500">
+                Inactive
+              </p>
+              <p className="text-xl sm:text-2xl font-bold text-red-600 mt-1">
+                {users.filter((u) => u.status === "inactive").length}
+              </p>
+            </div>
+            <div className="bg-red-50 p-2 sm:p-3 rounded-lg">
+              <UserX className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
+            </div>
+          </div>
+        </div>
+      </div>
 
-          {/* Users List */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Survey Users ({users.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {(loading || initializing) && <p>Loading users...</p>}
-              {!initializing && !auth.currentUser && (
-                <p className="text-red-600">Please log in to view users.</p>
-              )}
+      {(message || error) && (
+        <div
+          className={`mb-6 p-4 rounded-lg border ${
+            message && (message.includes("success") || message.includes("✅"))
+              ? "bg-green-50 text-green-700 border-green-200"
+              : "bg-red-50 text-red-700 border-red-200"
+          }`}
+        >
+          {error || message}
+        </div>
+      )}
 
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {users.map((user) => (
-                  <div key={user.id} className="border rounded-lg p-4 bg-white">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Building className="w-4 h-4 text-gray-500" />
-                          <h3 className="font-semibold">{user.full_name}</h3>
-                          <span
-                            className={`px-2 py-1 text-xs rounded-full ${
-                              user.status === "active"
-                                ? "bg-green-100 text-green-800"
-                                : user.status === "pending"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {user.status === "active"
-                              ? "Active"
-                              : user.status === "pending"
-                                ? "Pending"
-                                : "Inactive"}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-1">
-                          Email: {user.email}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Created:{" "}
-                          {user.created_at
-                            ? new Date(user.created_at).toLocaleDateString()
-                            : "N/A"}
-                        </p>
+      {/* Tabs */}
+      <div className="bg-white rounded-lg border border-slate-200">
+        <div className="border-b border-slate-200">
+          <div className="flex items-center justify-between px-4 sm:px-6 gap-4">
+            <div className="flex gap-1 overflow-x-auto">
+              <button
+                onClick={() => setFilterTab("all")}
+                className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  filterTab === "all"
+                    ? "border-slate-900 text-slate-900"
+                    : "border-transparent text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                All ({users.length})
+              </button>
+              <button
+                onClick={() => setFilterTab("active")}
+                className={`hidden sm:block px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  filterTab === "active"
+                    ? "border-green-600 text-green-600"
+                    : "border-transparent text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                Active ({users.filter((u) => u.status === "active").length})
+              </button>
+              <button
+                onClick={() => setFilterTab("pending")}
+                className={`hidden sm:block px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  filterTab === "pending"
+                    ? "border-amber-600 text-amber-600"
+                    : "border-transparent text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                Pending ({users.filter((u) => u.status === "pending").length})
+              </button>
+              <button
+                onClick={() => setFilterTab("inactive")}
+                className={`hidden sm:block px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  filterTab === "inactive"
+                    ? "border-red-600 text-red-600"
+                    : "border-transparent text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                Inactive ({users.filter((u) => u.status === "inactive").length})
+              </button>
+            </div>
+            <div className="relative flex-shrink-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-9 w-48"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase">
+                  Name
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase">
+                  Email
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase">
+                  Status
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase">
+                  Created
+                </th>
+                <th className="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {(loading || initializing) ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-12 text-center text-slate-600">
+                    Loading...
+                  </td>
+                </tr>
+              ) : filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
+                    No users found
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((user) => (
+                  <tr key={user.id} className="hover:bg-slate-50">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-slate-400" />
+                        <span className="font-medium text-slate-900">
+                          {user.full_name}
+                        </span>
                       </div>
-
-                      <div className="flex gap-2 ml-4">
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-600">
+                      {user.email}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${
+                          user.status === "active"
+                            ? "bg-green-100 text-green-700"
+                            : user.status === "pending"
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {user.status === "active"
+                          ? "Active"
+                          : user.status === "pending"
+                            ? "Pending"
+                            : "Inactive"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-600">
+                      {user.created_at
+                        ? new Date(user.created_at).toLocaleDateString()
+                        : "N/A"}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => resendPasswordEmail(user.email)}
-                          title="Resend password setup email"
+                          className="h-8 w-8 p-0"
                         >
                           <Mail className="w-4 h-4" />
                         </Button>
-                        {user.status === "pending" && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleToggleStatus(user.id)}
-                            title="Activate User"
-                          >
-                            <UserCheck className="w-4 h-4" />
-                          </Button>
-                        )}
                         {user.status === "active" && (
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleToggleStatus(user.id)}
-                            title="Deactivate User"
+                            className="h-8 w-8 p-0"
                           >
                             <UserX className="w-4 h-4" />
                           </Button>
                         )}
-                        {user.status === "inactive" && (
+                        {(user.status === "inactive" || user.status === "pending") && (
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleToggleStatus(user.id)}
-                            title="Activate User"
+                            className="h-8 w-8 p-0"
                           >
                             <UserCheck className="w-4 h-4" />
                           </Button>
@@ -741,7 +795,7 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
                           variant="outline"
                           size="sm"
                           onClick={() => openEditModal(user)}
-                          title="Edit user"
+                          className="h-8 w-8 p-0"
                         >
                           <Edit3 className="w-4 h-4" />
                         </Button>
@@ -749,32 +803,105 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
                           variant="outline"
                           size="sm"
                           onClick={() => openDeleteModal(user)}
+                          className="h-8 w-8 p-0"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
-                    </div>
-                  </div>
-                ))}
-
-                {users.length === 0 &&
-                  !loading &&
-                  !initializing &&
-                  auth.currentUser && (
-                    <p className="text-gray-500 text-center py-8">
-                      No users found
-                    </p>
-                  )}
-              </div>
-            </CardContent>
-          </Card>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-
-
       </div>
 
-      {/* Edit User Modal */}
-      {isEditModalOpen && (
+      {/* Create User Modal */}
+      {showCreateForm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full shadow-xl">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-xl font-bold text-slate-900">
+                Add New User
+              </h2>
+              <button
+                onClick={() => {
+                  setShowCreateForm(false);
+                  setFormData({ full_name: "", email: "" });
+                }}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={(e) => {
+              handleSubmit(e);
+              if (!loading) setShowCreateForm(false);
+            }} className="p-6 space-y-4">
+              <div>
+                <Label htmlFor="full_name" className="text-slate-700 font-medium">
+                  Full Name *
+                </Label>
+                <Input
+                  id="full_name"
+                  type="text"
+                  value={formData.full_name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, full_name: e.target.value })
+                  }
+                  required
+                  className="mt-1.5"
+                  placeholder="Enter full name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="email" className="text-slate-700 font-medium">
+                  Email Address *
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  required
+                  className="mt-1.5"
+                  placeholder="user@company.com"
+                />
+                <p className="text-xs text-slate-500 mt-1.5">
+                  Password setup email will be sent automatically
+                </p>
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowCreateForm(false);
+                    setFormData({ full_name: "", email: "" });
+                  }}
+                  className="px-6"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-slate-900 hover:bg-slate-800 px-6"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {loading ? "Creating..." : "Create User"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+    )}
+
+    {/* Edit User Modal */}
+    {isEditModalOpen && (
         <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
           <DialogContent>
             <DialogHeader>

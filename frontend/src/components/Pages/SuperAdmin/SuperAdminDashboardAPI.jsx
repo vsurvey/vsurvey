@@ -16,6 +16,7 @@ import {
   X,
   FileText,
   HelpCircle,
+  Search,
 } from "lucide-react";
 import TopBar from "../TapBar/TopBar";
 import SuperAdminSidebar from "../SideBar/SuperAdminSidebar";
@@ -51,6 +52,7 @@ const secondaryAuth = getAuth(secondaryApp);
 
 const SuperAdminDashboardAPI = () => {
   const [activeTab, setActiveTab] = useState("clients");
+  const [clientFilterTab, setClientFilterTab] = useState("all");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -76,6 +78,8 @@ const SuperAdminDashboardAPI = () => {
   const [editFormData, setEditFormData] = useState({ name: "" });
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Load clients from Firebase with real-time listener for status changes only
   useEffect(() => {
@@ -225,6 +229,7 @@ const SuperAdminDashboardAPI = () => {
       console.log("Client document created successfully");
 
       setFormData({ name: "", email: "", clientId: "" });
+      setShowCreateForm(false);
       setMessage(
         `✅ Client created successfully! Password setup email sent to ${formData.email} (Check spam folder if not received)`
       );
@@ -238,7 +243,7 @@ const SuperAdminDashboardAPI = () => {
       console.error("Error message:", error.message);
 
       if (error.code === "auth/email-already-in-use") {
-        setMessage("❌ Email already exists in Firebase Auth");
+        setMessage("❌ Email already exists");
       } else if (error.code === "auth/weak-password") {
         setMessage("❌ Password is too weak");
       } else if (error.code === "auth/invalid-email") {
@@ -461,10 +466,10 @@ const SuperAdminDashboardAPI = () => {
       console.log("✅ Client document deleted from Firestore");
 
       const authMessage = authDeleted
-        ? "and Firebase Auth"
-        : "(Firebase Auth user remains)";
+        // ? "and Firebase Auth"
+        // : "(Firebase Auth user remains)";
       setMessage(
-        `✅ Client deleted successfully from Firestore ${authMessage}!`
+        `✅ Client deleted successfully from ${authMessage}!`
       );
 
       setTimeout(() => setMessage(""), 5000);
@@ -502,7 +507,7 @@ const SuperAdminDashboardAPI = () => {
       console.log("Password reset email sent");
 
       setMessage(
-        `✅ Firebase user created and password setup email sent to ${email}`
+        `✅ user created and password setup email sent to ${email}`
       );
       setTimeout(() => setMessage(""), 8000);
     } catch (error) {
@@ -531,7 +536,7 @@ const SuperAdminDashboardAPI = () => {
 
       if (error.code === "auth/user-not-found") {
         setMessage(
-          `❌ User ${email} not found in Firebase Auth. Please create the user first.`
+          `❌ User ${email} not found . Please create the user first.`
         );
       } else if (error.code === "auth/invalid-email") {
         setMessage(`❌ Invalid email address: ${email}`);
@@ -687,292 +692,336 @@ const SuperAdminDashboardAPI = () => {
       case "clients":
         return (
           <>
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Client Management
-              </h1>
-              <p className="text-gray-600">
-                Create and manage client administrators
-              </p>
-            </div>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+                    Client Management
+                  </h1>
+                  <p className="text-slate-600 text-sm sm:text-base mt-1 sm:mt-2">
+                    Manage your client administrators
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setShowCreateForm(true)}
+                  className="bg-slate-900 hover:bg-slate-800 h-10 sm:h-11 px-4 sm:px-6 w-full sm:w-auto"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add New Client
+                </Button>
+              </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <Card>
-                <CardContent className="p-6">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
+                <div className="bg-white p-4 sm:p-6 rounded-lg border border-slate-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Total Clients
+                      <p className="text-xs sm:text-sm font-medium text-slate-500">
+                        Total
                       </p>
-                      <p className="text-2xl font-bold">
+                      <p className="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
                         {clientAdmins.length}
                       </p>
                     </div>
-                    <Building className="w-8 h-8 text-blue-500" />
+                    <div className="bg-blue-50 p-2 sm:p-3 rounded-lg">
+                      <Building className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
 
-              <Card>
-                <CardContent className="p-6">
+                <div className="bg-white p-4 sm:p-6 rounded-lg border border-slate-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Active Clients
+                      <p className="text-xs sm:text-sm font-medium text-slate-500">
+                        Active
                       </p>
-                      <p className="text-2xl font-bold">
-                        {
-                          clientAdmins.filter((c) => c.status === "active")
-                            .length
-                        }
+                      <p className="text-xl sm:text-2xl font-bold text-green-600 mt-1">
+                        {clientAdmins.filter((c) => c.status === "active").length}
                       </p>
                     </div>
-                    <UserCheck className="w-8 h-8 text-green-500" />
+                    <div className="bg-green-50 p-2 sm:p-3 rounded-lg">
+                      <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
 
-              <Card>
-                <CardContent className="p-6">
+                <div className="bg-white p-4 sm:p-6 rounded-lg border border-slate-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Pending Clients
+                      <p className="text-xs sm:text-sm font-medium text-slate-500">
+                        Pending
                       </p>
-                      <p className="text-2xl font-bold">
-                        {
-                          clientAdmins.filter((c) => c.status === "pending")
-                            .length
-                        }
+                      <p className="text-xl sm:text-2xl font-bold text-amber-600 mt-1">
+                        {clientAdmins.filter((c) => c.status === "pending").length}
                       </p>
                     </div>
-                    <Mail className="w-8 h-8 text-yellow-500" />
+                    <div className="bg-amber-50 p-2 sm:p-3 rounded-lg">
+                      <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
 
-              <Card>
-                <CardContent className="p-6">
+                <div className="bg-white p-4 sm:p-6 rounded-lg border border-slate-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Inactive Clients
+                      <p className="text-xs sm:text-sm font-medium text-slate-500">
+                        Inactive
                       </p>
-                      <p className="text-2xl font-bold">
-                        {
-                          clientAdmins.filter((c) => c.status === "inactive")
-                            .length
-                        }
+                      <p className="text-xl sm:text-2xl font-bold text-red-600 mt-1">
+                        {clientAdmins.filter((c) => c.status === "inactive").length}
                       </p>
                     </div>
-                    <UserX className="w-8 h-8 text-red-500" />
+                    <div className="bg-red-50 p-2 sm:p-3 rounded-lg">
+                      <UserX className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {message && (
-              <div
-                className={`mb-6 p-4 rounded-md ${
-                  message.includes("success")
-                    ? "bg-green-50 text-green-700"
-                    : "bg-red-50 text-red-700"
-                }`}
-              >
-                {message}
+                </div>
               </div>
-            )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Create Client Admin Form */}
-              <Card className="lg:col-span-1">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Plus className="w-5 h-5" />
-                    Add Client Admin
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                      <Label htmlFor="name">Company Name *</Label>
-                      <Input
-                        id="name"
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) =>
-                          setFormData({ ...formData, name: e.target.value })
-                        }
-                        placeholder="Enter company name"
-                        required
-                      />
-                    </div>
+              {message && (
+                <div
+                  className={`mb-6 p-4 rounded-lg border ${
+                    message.includes("success") || message.includes("✅")
+                      ? "bg-green-50 text-green-700 border-green-200"
+                      : "bg-red-50 text-red-700 border-red-200"
+                  }`}
+                >
+                  {message}
+                </div>
+              )}
 
-                    <div>
-                      <Label htmlFor="email">Admin Email *</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) =>
-                          setFormData({ ...formData, email: e.target.value })
-                        }
-                        placeholder="Enter admin email"
-                        required
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Password setup email will be sent automatically
-                      </p>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="clientId">Client ID (Optional)</Label>
-                      <Input
-                        id="clientId"
-                        type="text"
-                        value={formData.clientId}
-                        onChange={(e) =>
-                          setFormData({ ...formData, clientId: e.target.value })
-                        }
-                        placeholder="Auto-generated if empty"
-                      />
-                    </div>
-
-                    <Button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-600 hover:to-purple-700"
+              {/* Tabs */}
+              <div className="bg-white rounded-lg border border-slate-200">
+                <div className="border-b border-slate-200">
+                  <div className="flex sm:flex-row flex-col items-center justify-between px-4 sm:px-6 gap-4">
+                    <div className="flex gap-1 overflow-x-auto">
+                    <button
+                      onClick={() => setClientFilterTab("all")}
+                      className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                        clientFilterTab === "all"
+                          ? "border-slate-900 text-slate-900"
+                          : "border-transparent text-slate-500 hover:text-slate-700"
+                      }`}
                     >
-                      {loading ? "Creating..." : "Create Client Admin"}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-
-              {/* Client Admins List */}
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Client Administrators ({clientAdmins.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {loading && <p>Loading clients...</p>}
-
-                  <div className="space-y-4 max-h-96 overflow-y-auto">
-                    {clientAdmins.map((admin) => (
-                      <div
-                        key={admin.id}
-                        className="border rounded-lg p-4 bg-white hover:bg-gray-50 cursor-pointer transition-colors"
-                        onClick={() => openClientModal(admin)}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Building className="w-4 h-4 text-gray-500" />
-                              <h3 className="font-semibold">
-                                {admin.company_name || admin.name}
-                              </h3>
-                              <span
-                                className={`px-2 py-1 text-xs rounded-full ${
-                                  admin.status === "active"
-                                    ? "bg-green-100 text-green-800"
-                                    : admin.status === "pending"
-                                      ? "bg-yellow-100 text-yellow-800"
-                                      : "bg-red-100 text-red-800"
-                                }`}
-                              >
-                                {admin.status === "active"
-                                  ? "Active"
-                                  : admin.status === "pending"
-                                    ? "Pending"
-                                    : "Inactive"}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-600 mb-1">
-                              Email: {admin.email}
-                            </p>
-                            <p className="text-sm text-gray-600 mb-1">
-                              Client ID: {admin.clientId || admin.id}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              Created:{" "}
-                              {new Date(admin.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-
-                          <div className="flex gap-2 ml-4">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) =>
-                                resendPasswordEmail(admin.email) &&
-                                e.stopPropagation()
-                              }
-                              title="Resend password setup email"
-                            >
-                              <Mail className="w-4 h-4" />
-                            </Button>
-                            {admin.status === "active" && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleClientStatus(admin.id, admin.isActive);
-                                }}
-                                title="Deactivate client"
-                              >
-                                <UserX className="w-4 h-4" />
-                              </Button>
-                            )}
-                            {admin.status === "inactive" && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleClientStatus(admin.id, admin.isActive);
-                                }}
-                                title="Activate client"
-                              >
-                                <UserCheck className="w-4 h-4" />
-                              </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => openEditModal(e, admin)}
-                              title="Edit client"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => openDeleteModal(e, admin)}
-                              title="Delete client"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-
-                    {clientAdmins.length === 0 && !loading && (
-                      <p className="text-gray-500 text-center py-8">
-                        No client administrators found
-                      </p>
-                    )}
+                      All ({clientAdmins.length})
+                    </button>
+                    <button
+                      onClick={() => setClientFilterTab("active")}
+                      className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                        clientFilterTab === "active"
+                          ? "border-green-600 text-green-600"
+                          : "border-transparent text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      Active ({clientAdmins.filter((c) => c.status === "active").length})
+                    </button>
+                    <button
+                      onClick={() => setClientFilterTab("pending")}
+                      className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                        clientFilterTab === "pending"
+                          ? "border-amber-600 text-amber-600"
+                          : "border-transparent text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      Pending ({clientAdmins.filter((c) => c.status === "pending").length})
+                    </button>
+                    <button
+                      onClick={() => setClientFilterTab("inactive")}
+                      className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                        clientFilterTab === "inactive"
+                          ? "border-red-600 text-red-600"
+                          : "border-transparent text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      Inactive ({clientAdmins.filter((c) => c.status === "inactive").length})
+                    </button>
+                    </div>
+                    <div className="relative flex-shrink-0">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        type="text"
+                        placeholder="Search..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9 h-9 w-48"
+                      />
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase">
+                          Company
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase">
+                          Email
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase">
+                          Status
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase">
+                          Created
+                        </th>
+                        <th className="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {loading ? (
+                        <tr>
+                          <td
+                            colSpan="5"
+                            className="px-6 py-12 text-center text-slate-600"
+                          >
+                            Loading...
+                          </td>
+                        </tr>
+                      ) : clientAdmins.filter(
+                          (c) =>
+                            (clientFilterTab === "all" ||
+                            c.status === clientFilterTab) &&
+                            (searchQuery === "" ||
+                              (c.company_name || c.name).toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              c.email.toLowerCase().includes(searchQuery.toLowerCase()))
+                        ).length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan="5"
+                            className="px-6 py-12 text-center text-slate-500"
+                          >
+                            No clients found
+                          </td>
+                        </tr>
+                      ) : (
+                        clientAdmins
+                          .filter(
+                            (c) =>
+                              (clientFilterTab === "all" ||
+                              c.status === clientFilterTab) &&
+                              (searchQuery === "" ||
+                                (c.company_name || c.name).toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                c.email.toLowerCase().includes(searchQuery.toLowerCase()))
+                          )
+                          .map((admin) => (
+                            <tr
+                              key={admin.id}
+                              className="hover:bg-slate-50 cursor-pointer"
+                              onClick={() => openClientModal(admin)}
+                            >
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-2">
+                                  <Building className="w-4 h-4 text-slate-400" />
+                                  <span className="font-medium text-slate-900">
+                                    {admin.company_name || admin.name}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-sm text-slate-600">
+                                {admin.email}
+                              </td>
+                              <td className="px-6 py-4">
+                                <span
+                                  className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${
+                                    admin.status === "active"
+                                      ? "bg-green-100 text-green-700"
+                                      : admin.status === "pending"
+                                        ? "bg-amber-100 text-amber-700"
+                                        : "bg-red-100 text-red-700"
+                                  }`}
+                                >
+                                  {admin.status === "active"
+                                    ? "Active"
+                                    : admin.status === "pending"
+                                      ? "Pending"
+                                      : "Inactive"}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-sm text-slate-600">
+                                {new Date(admin.createdAt).toLocaleDateString()}
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      resendPasswordEmail(admin.email);
+                                    }}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <Mail className="w-4 h-4" />
+                                  </Button>
+                                  {admin.status === "active" && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleClientStatus(
+                                          admin.id,
+                                          admin.isActive
+                                        );
+                                      }}
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      <UserX className="w-4 h-4" />
+                                    </Button>
+                                  )}
+                                  {admin.status === "inactive" && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleClientStatus(
+                                          admin.id,
+                                          admin.isActive
+                                        );
+                                      }}
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      <UserCheck className="w-4 h-4" />
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingClient(admin);
+                                      setEditFormData({
+                                        name: admin.company_name || admin.name,
+                                      });
+                                      setIsEditModalOpen(true);
+                                    }}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <Edit3 className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => openDeleteModal(e, admin)}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
-
-
           </>
         );
       case "results":
@@ -983,7 +1032,7 @@ const SuperAdminDashboardAPI = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-100">
       <TopBar
         setActiveTab={setActiveTab}
         onLogout={handleLogout}
@@ -1001,11 +1050,11 @@ const SuperAdminDashboardAPI = () => {
       />
 
       <main
-        className={`transition-all duration-300 pt-16 sm:pt-20 md:pt-24 p-4 sm:p-6 md:p-8 mt-10 ${
+        className={`transition-all duration-300 pt-20 bg-gray-50 min-h-screen ${
           isSidebarOpen ? "lg:ml-64" : "lg:ml-16"
         }`}
       >
-        <div className="max-w-7xl mx-auto">{renderContent()}</div>
+        {renderContent()}
       </main>
 
       {/* Client Details Modal */}
@@ -1207,69 +1256,165 @@ const SuperAdminDashboardAPI = () => {
         </div>
       )}
 
-      {/* Edit Client Modal */}
-      {isEditModalOpen && editingClient && (
+      {/* Create/Edit Client Modal */}
+      {(isEditModalOpen || showCreateForm) && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full">
+          <div className="bg-white rounded-lg max-w-md w-full shadow-xl">
             <div className="flex items-center justify-between p-6 border-b">
-              <h2 className="text-xl font-bold text-gray-900">Edit Client</h2>
+              <h2 className="text-xl font-bold text-slate-900">
+                {editingClient ? "Edit Client" : "Add New Client"}
+              </h2>
               <button
-                onClick={closeEditModal}
-                className="text-gray-400 hover:text-gray-600"
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setShowCreateForm(false);
+                  setEditingClient(null);
+                  setEditFormData({ name: "" });
+                  setFormData({ name: "", email: "", clientId: "" });
+                }}
+                className="text-slate-400 hover:text-slate-600"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
-            <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
+            <form
+              onSubmit={editingClient ? handleEditSubmit : handleSubmit}
+              className="p-6 space-y-4"
+            >
               <div>
-                <Label htmlFor="editName">Company Name *</Label>
+                <Label
+                  htmlFor="modalName"
+                  className="text-slate-700 font-medium"
+                >
+                  Company Name *
+                </Label>
                 <Input
-                  id="editName"
+                  id="modalName"
                   type="text"
-                  value={editFormData.name}
-                  onChange={(e) => setEditFormData({ name: e.target.value })}
+                  value={editingClient ? editFormData.name : formData.name}
+                  onChange={(e) =>
+                    editingClient
+                      ? setEditFormData({ name: e.target.value })
+                      : setFormData({ ...formData, name: e.target.value })
+                  }
                   required
+                  className="mt-1.5"
+                  placeholder="Enter company name"
                 />
               </div>
               <div>
-                <Label htmlFor="editEmail">Admin Email</Label>
+                <Label
+                  htmlFor="modalEmail"
+                  className="text-slate-700 font-medium"
+                >
+                  Admin Email {editingClient ? "" : "*"}
+                </Label>
                 <Input
-                  id="editEmail"
+                  id="modalEmail"
                   type="email"
-                  value={editingClient.email}
-                  disabled
-                  className="bg-gray-100"
+                  value={editingClient ? editingClient.email : formData.email}
+                  onChange={(e) =>
+                    !editingClient &&
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  disabled={!!editingClient}
+                  required={!editingClient}
+                  className={`mt-1.5 ${editingClient ? "bg-slate-50" : ""}`}
+                  placeholder="admin@company.com"
                 />
+                {!editingClient && (
+                  <p className="text-xs text-slate-500 mt-1.5">
+                    Password setup email will be sent automatically
+                  </p>
+                )}
               </div>
-              <div>
-                <Label htmlFor="editClientId">Client ID</Label>
-                <Input
-                  id="editClientId"
-                  type="text"
-                  value={editingClient.clientId || editingClient.id}
-                  disabled
-                  className="bg-gray-100"
-                />
-              </div>
-              <div>
-                <Label htmlFor="editCreated">Created</Label>
-                <Input
-                  id="editCreated"
-                  type="text"
-                  value={new Date(editingClient.createdAt).toLocaleDateString()}
-                  disabled
-                  className="bg-gray-100"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-4">
+              {editingClient ? (
+                <>
+                  <div>
+                    <Label
+                      htmlFor="modalClientId"
+                      className="text-slate-700 font-medium"
+                    >
+                      Client ID
+                    </Label>
+                    <Input
+                      id="modalClientId"
+                      type="text"
+                      value={editingClient.clientId || editingClient.id}
+                      disabled
+                      className="bg-slate-50 mt-1.5"
+                    />
+                  </div>
+                  <div>
+                    <Label
+                      htmlFor="modalCreated"
+                      className="text-slate-700 font-medium"
+                    >
+                      Created
+                    </Label>
+                    <Input
+                      id="modalCreated"
+                      type="text"
+                      value={new Date(
+                        editingClient.createdAt
+                      ).toLocaleDateString()}
+                      disabled
+                      className="bg-slate-50 mt-1.5"
+                    />
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <Label
+                    htmlFor="modalClientId"
+                    className="text-slate-700 font-medium"
+                  >
+                    Client ID (Optional)
+                  </Label>
+                  <Input
+                    id="modalClientId"
+                    type="text"
+                    value={formData.clientId}
+                    onChange={(e) =>
+                      setFormData({ ...formData, clientId: e.target.value })
+                    }
+                    className="mt-1.5"
+                    placeholder="Auto-generated if empty"
+                  />
+                </div>
+              )}
+              <div className="flex justify-end gap-3 pt-4">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={closeEditModal}
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    setShowCreateForm(false);
+                    setEditingClient(null);
+                    setEditFormData({ name: "" });
+                    setFormData({ name: "", email: "", clientId: "" });
+                  }}
+                  className="px-6"
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Update Client</Button>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-slate-900 hover:bg-slate-800 px-6"
+                >
+                  {editingClient ? (
+                    <>
+                      <Edit3 className="w-4 h-4 mr-2" />
+                      Update Client
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-2" />
+                      {loading ? "Creating..." : "Create Client"}
+                    </>
+                  )}
+                </Button>
               </div>
             </form>
           </div>

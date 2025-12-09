@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Edit3, Trash2, Plus } from "lucide-react";
+import { Edit3, Trash2, Plus, FileText, Search, X } from "lucide-react";
 import { db, auth } from "../../../firebase";
 import {
   collection,
@@ -27,10 +27,9 @@ const CreateSurveysAPI = ({ profile, onProfileEdit, onLogout }) => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const questionsPerPage = 10;
-  const [editSearchQuery, setEditSearchQuery] = useState("");
-  const [editCurrentPage, setEditCurrentPage] = useState(1);
+  const [surveySearchQuery, setSurveySearchQuery] = useState("");
+  const [filterTab, setFilterTab] = useState("all");
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   // Edit modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -173,6 +172,7 @@ const CreateSurveysAPI = ({ profile, onProfileEdit, onLogout }) => {
 
       setSurveyName("");
       setSelectedQuestions([]);
+      setShowCreateForm(false);
       setMessage("Survey created successfully!");
       setTimeout(() => setMessage(""), 3000);
 
@@ -250,70 +250,6 @@ const CreateSurveysAPI = ({ profile, onProfileEdit, onLogout }) => {
           throw new Error("No client ID found for current user");
         }
 
-        // Delete all survey responses first
-        const responsesRef = collection(
-          db,
-          "superadmin",
-          "hdXje7ZvCbj7eOugVLiZ",
-          "clients",
-          clientId,
-          "surveys",
-          surveyToDelete.id,
-          "responses"
-        );
-        const responsesSnapshot = await getDocs(responsesRef);
-
-        const responseDeletePromises = [];
-        responsesSnapshot.forEach((responseDoc) => {
-          const responseRef = doc(
-            db,
-            "superadmin",
-            "hdXje7ZvCbj7eOugVLiZ",
-            "clients",
-            clientId,
-            "surveys",
-            surveyToDelete.id,
-            "responses",
-            responseDoc.id
-          );
-          responseDeletePromises.push(deleteDoc(responseRef));
-        });
-
-        // Remove survey from all user assignments
-        const assignmentsRef = collection(
-          db,
-          "superadmin",
-          "hdXje7ZvCbj7eOugVLiZ",
-          "clients",
-          clientId,
-          "survey_assignments"
-        );
-        const assignmentsSnapshot = await getDocs(assignmentsRef);
-
-        const assignmentDeletePromises = [];
-        assignmentsSnapshot.forEach((assignmentDoc) => {
-          const assignmentData = assignmentDoc.data();
-          if (assignmentData.survey_id === surveyToDelete.id) {
-            const assignmentRef = doc(
-              db,
-              "superadmin",
-              "hdXje7ZvCbj7eOugVLiZ",
-              "clients",
-              clientId,
-              "survey_assignments",
-              assignmentDoc.id
-            );
-            assignmentDeletePromises.push(deleteDoc(assignmentRef));
-          }
-        });
-
-        // Wait for all deletions to complete
-        await Promise.all([
-          ...responseDeletePromises,
-          ...assignmentDeletePromises,
-        ]);
-
-        // Delete the survey
         const surveyRef = doc(
           db,
           "superadmin",
@@ -325,9 +261,7 @@ const CreateSurveysAPI = ({ profile, onProfileEdit, onLogout }) => {
         );
         await deleteDoc(surveyRef);
 
-        setMessage(
-          `Survey deleted successfully! Removed ${responseDeletePromises.length} response(s) and ${assignmentDeletePromises.length} assignment(s).`
-        );
+        setMessage("Survey deleted successfully!");
         setTimeout(() => setMessage(""), 3000);
 
         await loadSurveys();
@@ -363,219 +297,254 @@ const CreateSurveysAPI = ({ profile, onProfileEdit, onLogout }) => {
     }));
   };
 
+  const getFilteredSurveys = () => {
+    let filtered = surveys;
+
+    if (surveySearchQuery) {
+      filtered = filtered.filter(s =>
+        s.name.toLowerCase().includes(surveySearchQuery.toLowerCase())
+      );
+    }
+
+    return filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  };
+
+  const filteredSurveys = getFilteredSurveys();
+
   return (
-    <div className="space-y-6">
-      <div className="max-w-7xl mx-auto p-6">
-        {message && (
-          <div
-            className={`mb-4 p-4 rounded-md ${
-              message.includes("success")
-                ? "bg-green-50 text-green-700"
-                : "bg-red-50 text-red-700"
-            }`}
-          >
-            {message}
-          </div>
-        )}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+            Survey Management
+          </h1>
+          <p className="text-slate-600 text-sm sm:text-base mt-1 sm:mt-2">
+            Create and manage surveys
+          </p>
+        </div>
+        <Button
+          onClick={() => setShowCreateForm(true)}
+          className="bg-slate-900 hover:bg-slate-800 h-10 sm:h-11 px-4 sm:px-6 w-full sm:w-auto"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Create New Survey
+        </Button>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Create Survey Form */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-2">Create New Survey</h2>
-            <p className="text-gray-600 mb-4">
-              Select questions and create survey
-            </p>
-
-            <form onSubmit={handleCreateSurvey} className="space-y-4">
-              <div>
-                <Label htmlFor="surveyName">SURVEY NAME</Label>
-                <Input
-                  id="surveyName"
-                  type="text"
-                  value={surveyName}
-                  onChange={(e) => setSurveyName(e.target.value)}
-                  placeholder="Type your survey name here"
-                  required
-                />
-              </div>
-
-              <Button
-                type="submit"
-                disabled={loading || selectedQuestions.length === 0}
-                className="w-full bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-600 hover:to-purple-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                {loading ? "Creating..." : "Create Survey"}
-              </Button>
-            </form>
-
-            <div className="mt-6">
-              <h3 className="text-lg font-medium mb-4">
-                Available Questions ({questions.length})
-              </h3>
-              
-              {/* Search Box */}
-              <div className="mb-4">
-                <Input
-                  type="text"
-                  placeholder="Search questions..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="w-full"
-                />
-              </div>
-
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {questions.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">
-                    No questions available
-                  </p>
-                ) : (
-                  (() => {
-                    const filteredQuestions = questions
-                      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-                      .filter((q) => q.text.toLowerCase().includes(searchQuery.toLowerCase()));
-                    
-                    const totalPages = Math.ceil(filteredQuestions.length / questionsPerPage);
-                    const startIndex = (currentPage - 1) * questionsPerPage;
-                    const endIndex = startIndex + questionsPerPage;
-                    const paginatedQuestions = filteredQuestions.slice(startIndex, endIndex);
-
-                    return (
-                      <>
-                        {paginatedQuestions.map((question) => (
-                      <div key={question.id} className="border rounded-lg p-3">
-                        <div className="flex items-start gap-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedQuestions.includes(question.id)}
-                            onChange={() =>
-                              toggleQuestionSelection(question.id)
-                            }
-                            className="mt-1"
-                          />
-                          <div className="flex-1">
-                            <p className="font-medium text-sm">
-                              {question.text}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {question.type}
-                            </p>
-                            {question.options &&
-                              question.options.length > 0 && (
-                                <div className="mt-2 ml-4">
-                                  {question.options.map((option, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="text-xs text-gray-600"
-                                    >
-                                      {idx + 1}.{" "}
-                                      {typeof option === "string"
-                                        ? option
-                                        : option.text}
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                          </div>
-                        </div>
-                      </div>
-                        ))}
-                        
-                        {/* Pagination */}
-                        {filteredQuestions.length > questionsPerPage && (
-                          <div className="flex justify-center items-center gap-2 mt-4 pt-4 border-t">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                              disabled={currentPage === 1}
-                            >
-                              Previous
-                            </Button>
-                            
-                            {[...Array(totalPages)].map((_, i) => (
-                              <Button
-                                key={i + 1}
-                                variant={currentPage === i + 1 ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => setCurrentPage(i + 1)}
-                                className={currentPage === i + 1 ? "bg-blue-600" : ""}
-                              >
-                                {i + 1}
-                              </Button>
-                            ))}
-                            
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                              disabled={currentPage === totalPages}
-                            >
-                              Next
-                            </Button>
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()
-                )}
-              </div>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">
+                Total Surveys
+              </p>
+              <p className="text-lg sm:text-xl font-bold text-slate-900 mt-1">
+                {surveys.length}
+              </p>
+            </div>
+            <div className="bg-blue-50 p-2 rounded-lg">
+              <FileText className="w-4 h-4 text-blue-600" />
             </div>
           </div>
+        </div>
 
-          {/* Surveys List */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">
-              Created Surveys ({surveys.length})
-            </h2>
-
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {surveys.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">
-                  No surveys created yet
-                </p>
-              ) : (
-                surveys.map((survey) => (
-                  <div key={survey.id} className="border rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{survey.name}</h3>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Questions: {survey.questionCount || 0}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Created:{" "}
-                          {new Date(survey.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex gap-2 ml-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(survey)}
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openDeleteModal(survey)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500">
+                Total Questions
+              </p>
+              <p className="text-lg sm:text-xl font-bold text-green-600 mt-1">
+                {questions.length}
+              </p>
+            </div>
+            <div className="bg-green-50 p-2 rounded-lg">
+              <FileText className="w-4 h-4 text-green-600" />
             </div>
           </div>
         </div>
       </div>
+
+      {message && (
+        <div
+          className={`mb-6 p-4 rounded-lg border ${
+            message.includes("success")
+              ? "bg-green-50 text-green-700 border-green-200"
+              : "bg-red-50 text-red-700 border-red-200"
+          }`}
+        >
+          {message}
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div className="bg-white rounded-lg border border-slate-200">
+        <div className="border-b border-slate-200">
+          <div className="flex items-center justify-between px-4 sm:px-6 gap-4">
+            <div className="flex gap-1 overflow-x-auto">
+              <button
+                onClick={() => setFilterTab("all")}
+                className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  filterTab === "all"
+                    ? "border-slate-900 text-slate-900"
+                    : "border-transparent text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                All Surveys ({surveys.length})
+              </button>
+            </div>
+            <div className="relative flex-shrink-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                type="text"
+                placeholder="Search..."
+                value={surveySearchQuery}
+                onChange={(e) => setSurveySearchQuery(e.target.value)}
+                className="pl-9 h-9 w-48"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 sm:p-6">
+          <div className="space-y-3">
+            {loading && <p className="text-center py-12 text-slate-600">Loading surveys...</p>}
+            {!loading && filteredSurveys.length === 0 && (
+              <p className="text-center py-12 text-slate-500">No surveys found</p>
+            )}
+            {!loading && filteredSurveys.map((survey) => (
+              <div key={survey.id} className="border border-slate-200 rounded-lg p-5 bg-white hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <p className="font-semibold text-slate-900">{survey.name}</p>
+                    <div className="flex items-center gap-4 mt-2">
+                      <span className="text-sm text-slate-600">
+                        Questions: <span className="font-medium">{survey.questionCount || 0}</span>
+                      </span>
+                      <span className="text-sm text-slate-600">
+                        Created: <span className="font-medium">{new Date(survey.createdAt).toLocaleDateString()}</span>
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 ml-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(survey)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openDeleteModal(survey)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Create Survey Modal */}
+      {showCreateForm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white">
+              <h2 className="text-xl font-bold text-slate-900">
+                Create New Survey
+              </h2>
+              <button
+                onClick={() => {
+                  setShowCreateForm(false);
+                  setSurveyName("");
+                  setSelectedQuestions([]);
+                }}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6">
+              <form onSubmit={handleCreateSurvey} className="space-y-4">
+                <div>
+                  <Label htmlFor="surveyName" className="text-slate-700 font-medium">
+                    Survey Name *
+                  </Label>
+                  <Input
+                    id="surveyName"
+                    type="text"
+                    value={surveyName}
+                    onChange={(e) => setSurveyName(e.target.value)}
+                    required
+                    className="mt-1.5"
+                    placeholder="Enter survey name"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-slate-700 font-medium">
+                    Select Questions * ({selectedQuestions.length} selected)
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder="Search questions..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="mt-1.5 mb-3"
+                  />
+                  <div className="border rounded-lg p-3 max-h-60 overflow-y-auto space-y-2">
+                    {questions.filter(q => q.text.toLowerCase().includes(searchQuery.toLowerCase())).map((question) => (
+                      <div key={question.id} className="flex items-start gap-3 p-2 hover:bg-slate-50 rounded">
+                        <input
+                          type="checkbox"
+                          checked={selectedQuestions.includes(question.id)}
+                          onChange={() => toggleQuestionSelection(question.id)}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{question.text}</p>
+                          <p className="text-xs text-slate-500">{question.type}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowCreateForm(false);
+                      setSurveyName("");
+                      setSelectedQuestions([]);
+                    }}
+                    className="px-6"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={loading || selectedQuestions.length === 0}
+                    className="bg-slate-900 hover:bg-slate-800 px-6"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    {loading ? "Creating..." : "Create Survey"}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
@@ -597,90 +566,22 @@ const CreateSurveysAPI = ({ profile, onProfileEdit, onLogout }) => {
             </div>
 
             <div>
-              <Label>Select Questions</Label>
-              
-              {/* Search Box for Edit Modal */}
-              <div className="mb-3">
-                <Input
-                  type="text"
-                  placeholder="Search questions..."
-                  value={editSearchQuery}
-                  onChange={(e) => {
-                    setEditSearchQuery(e.target.value);
-                    setEditCurrentPage(1);
-                  }}
-                  className="w-full"
-                />
-              </div>
-
-              <div className="space-y-2 max-h-60 overflow-y-auto border rounded p-3">
-                {(() => {
-                  const filteredQuestions = questions
-                    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-                    .filter((q) => q.text.toLowerCase().includes(editSearchQuery.toLowerCase()));
-                  
-                  const totalPages = Math.ceil(filteredQuestions.length / questionsPerPage);
-                  const startIndex = (editCurrentPage - 1) * questionsPerPage;
-                  const endIndex = startIndex + questionsPerPage;
-                  const paginatedQuestions = filteredQuestions.slice(startIndex, endIndex);
-
-                  return (
-                    <>
-                      {paginatedQuestions.map((question) => (
-                        <div key={question.id} className="flex items-start gap-3">
-                          <input
-                            type="checkbox"
-                            checked={editFormData.questions.includes(question.id)}
-                            onChange={() => toggleEditQuestionSelection(question.id)}
-                            className="mt-1"
-                          />
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">{question.text}</p>
-                            <p className="text-xs text-gray-500">{question.type}</p>
-                          </div>
-                        </div>
-                      ))}
-                      
-                      {/* Pagination for Edit Modal */}
-                      {filteredQuestions.length > questionsPerPage && (
-                        <div className="flex justify-center items-center gap-2 mt-3 pt-3 border-t">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditCurrentPage(prev => Math.max(1, prev - 1))}
-                            disabled={editCurrentPage === 1}
-                            type="button"
-                          >
-                            Previous
-                          </Button>
-                          
-                          {[...Array(totalPages)].map((_, i) => (
-                            <Button
-                              key={i + 1}
-                              variant={editCurrentPage === i + 1 ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => setEditCurrentPage(i + 1)}
-                              className={editCurrentPage === i + 1 ? "bg-blue-600" : ""}
-                              type="button"
-                            >
-                              {i + 1}
-                            </Button>
-                          ))}
-                          
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                            disabled={editCurrentPage === totalPages}
-                            type="button"
-                          >
-                            Next
-                          </Button>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
+              <Label>Select Questions ({editFormData.questions.length} selected)</Label>
+              <div className="space-y-2 max-h-60 overflow-y-auto border rounded p-3 mt-2">
+                {questions.map((question) => (
+                  <div key={question.id} className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={editFormData.questions.includes(question.id)}
+                      onChange={() => toggleEditQuestionSelection(question.id)}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{question.text}</p>
+                      <p className="text-xs text-gray-500">{question.type}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -688,7 +589,7 @@ const CreateSurveysAPI = ({ profile, onProfileEdit, onLogout }) => {
               <Button
                 type="submit"
                 disabled={loading}
-                className="bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-600 hover:to-purple-700"
+                className="bg-slate-900 hover:bg-slate-800"
               >
                 {loading ? "Updating..." : "Update Survey"}
               </Button>
@@ -722,7 +623,7 @@ const CreateSurveysAPI = ({ profile, onProfileEdit, onLogout }) => {
             <div className="flex gap-2 pt-4">
               <Button
                 onClick={confirmDelete}
-                className="flex-1 bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-600 hover:to-purple-700"
+                className="flex-1 bg-red-600 hover:bg-red-700"
               >
                 Delete Survey
               </Button>

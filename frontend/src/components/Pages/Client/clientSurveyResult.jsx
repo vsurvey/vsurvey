@@ -11,6 +11,8 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  FileText,
+  Search,
 } from "lucide-react";
 import {
   Select,
@@ -40,6 +42,8 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
   const [filters, setFilters] = useState({});
   const [openDropdowns, setOpenDropdowns] = useState({});
   const [unsubscribers, setUnsubscribers] = useState([]);
+  const [filterTab, setFilterTab] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const getLocationName = async (lat, lng) => {
     const cacheKey = `${lat},${lng}`;
@@ -354,59 +358,107 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
     }
   };
 
+  // Filter surveys based on tab and search
+  const getFilteredSurveys = () => {
+    let filtered = surveys;
+
+    if (searchQuery) {
+      filtered = filtered.filter(s =>
+        s.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    return filtered;
+  };
+
+  const filteredSurveys = getFilteredSurveys();
+
   return (
-    <div className="space-y-6">
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Survey Results</h1>
-          <p className="text-gray-600 mt-2">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+            Survey Results
+          </h1>
+          <p className="text-slate-600 text-sm sm:text-base mt-1 sm:mt-2">
             View and analyze survey responses
           </p>
         </div>
+      </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Total Surveys
-                  </p>
-                  <p className="text-3xl font-bold text-blue-600">
-                    {surveys.length}
-                  </p>
-                </div>
-                <BarChart3 className="w-8 h-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Total Responses
-                  </p>
-                  <p className="text-3xl font-bold text-green-600">
-                    {totalResponses}
-                  </p>
-                </div>
-                <Users className="w-8 h-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-slate-500">
+                Total Surveys
+              </p>
+              <p className="text-lg sm:text-xl font-bold text-slate-900 mt-1">
+                {surveys.length}
+              </p>
+            </div>
+            <div className="bg-blue-50 p-2 rounded-lg">
+              <FileText className="w-4 h-4 text-blue-600" />
+            </div>
+          </div>
         </div>
 
-        {/* Survey Cards */}
-        <div className="space-y-4">
-          {loading ? (
-            <p className="text-gray-500 text-center py-8">Loading surveys...</p>
-          ) : (
-            <>
-              {surveys.map((survey) => {
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-slate-500">
+                Total Responses
+              </p>
+              <p className="text-lg sm:text-xl font-bold text-green-600 mt-1">
+                {totalResponses}
+              </p>
+            </div>
+            <div className="bg-green-50 p-2 rounded-lg">
+              <Users className="w-4 h-4 text-green-600" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-white rounded-lg border border-slate-200">
+        <div className="border-b border-slate-200">
+          <div className="flex items-center justify-between px-4 sm:px-6 gap-4">
+            <div className="flex gap-1 overflow-x-auto">
+              <button
+                onClick={() => setFilterTab("all")}
+                className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  filterTab === "all"
+                    ? "border-slate-900 text-slate-900"
+                    : "border-transparent text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                All Surveys ({surveys.length})
+              </button>
+            </div>
+            <div className="relative flex-shrink-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 w-48"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 sm:p-6">
+          <div className="space-y-3">
+            {loading ? (
+              <p className="text-center py-12 text-slate-600">Loading surveys...</p>
+            ) : filteredSurveys.length === 0 ? (
+              <p className="text-center py-12 text-slate-500">No surveys found</p>
+            ) : (
+              filteredSurveys.map((survey) => {
                 const isExpanded = expandedSurvey === survey.id;
                 const allResponses = surveyResponses[survey.id] || [];
                 const questions = surveyQuestions[survey.id] || {};
@@ -505,8 +557,7 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
                 };
 
                 return (
-                  <Card key={survey.id} className="overflow-hidden">
-                    <CardContent className="p-6">
+                  <div key={survey.id} className="border border-slate-200 rounded-lg p-5 bg-white hover:shadow-md transition-shadow">
                       <div className="flex justify-between items-center">
                         <div className="flex-1">
                           <h3 className="text-xl font-semibold text-gray-900">
@@ -775,17 +826,11 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
                           )}
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
+                  </div>
                 );
-              })}
-              {surveys.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  No surveys found
-                </div>
-              )}
-            </>
-          )}
+              })
+            )}
+          </div>
         </div>
       </div>
     </div>

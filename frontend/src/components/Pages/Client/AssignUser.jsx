@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Edit3, Trash2 } from "lucide-react";
+import { Edit3, Trash2, Users, FileText, CheckCircle, XCircle, Search } from "lucide-react";
 import { db, auth } from "../../../firebase";
 import {
   collection,
@@ -46,6 +46,9 @@ const AssignUser = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [assignmentDocs, setAssignmentDocs] = useState({});
+  const [filterTab, setFilterTab] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -729,261 +732,397 @@ const AssignUser = ({
       !selectedSurveysForUser.includes(survey.id)
   );
 
+  // Calculate stats
+  const totalAssignments = Object.keys(userAssignments).length;
+  const activeAssignments = Object.values(userAssignments).filter(surveys => 
+    surveys.some(s => s.active !== false)
+  ).length;
+  const inactiveAssignments = totalAssignments - activeAssignments;
+  const totalSurveysAssigned = Object.values(userAssignments).reduce(
+    (sum, surveys) => sum + surveys.length, 0
+  );
+
+  // Filter assignments
+  const filteredAssignments = Object.entries(userAssignments).filter(([userId, surveys]) => {
+    const user = users.find(u => u.id === userId);
+    if (!user) return false;
+
+    // Search filter
+    if (searchQuery && !user.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+
+    // Tab filter
+    if (filterTab === "active") {
+      return surveys.some(s => s.active !== false);
+    } else if (filterTab === "inactive") {
+      return surveys.every(s => s.active === false);
+    }
+    return true;
+  });
+
   return (
-    <div className="space-y-6">
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Assign Surveys to Users
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+            Survey Assignments
           </h1>
-          <p className="text-gray-600 mt-2">
-            Select users and assign surveys to them
+          <p className="text-slate-600 text-sm sm:text-base mt-1 sm:mt-2">
+            Manage user survey assignments
           </p>
         </div>
+        <Button
+          onClick={() => setShowCreateModal(true)}
+          className="bg-slate-900 hover:bg-slate-800 h-10 sm:h-11 px-4 sm:px-6 w-full sm:w-auto"
+        >
+          <Users className="w-4 h-4 mr-2" />
+          Assign Survey
+        </Button>
+      </div>
 
         {confirmationMessage && (
-          <div className="mb-4 p-4 rounded-md bg-green-50 text-green-700">
+          <div className="p-4 rounded-lg bg-green-50 text-green-700 text-sm">
             {confirmationMessage}
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Assignment Form */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Create Assignment</h2>
-            <div className="space-y-4">
-              <div className="space-y-4">
-                {/* User Selection */}
-                <div className="relative">
-                  <label className="block text-xs md:text-sm font-bold text-black mb-2">
-                    SELECT USERS
-                  </label>
-                  <Input
-                    type="text"
-                    value={userSearch}
-                    onChange={(e) => {
-                      setUserSearch(e.target.value);
-                      setShowUserDropdown(true);
-                    }}
-                    onFocus={() => setShowUserDropdown(true)}
-                    onBlur={() =>
-                      setTimeout(() => setShowUserDropdown(false), 200)
-                    }
-                    placeholder={
-                      users.length === 0
-                        ? "No users available. Create users first."
-                        : "Search and select users..."
-                    }
-                    className="rounded-[5px] border-gray-400 p-3 text-sm w-full"
-                    disabled={users.length === 0}
-                  />
-                  {showUserDropdown && filteredUsers.length > 0 && (
-                    <div className="absolute z-10 w-full bg-white border border-gray-400 rounded-[5px] mt-1 max-h-40 overflow-y-auto">
-                      {filteredUsers.map((user) => (
-                        <div
-                          key={user.id}
-                          onClick={() => handleUserSelection(user.id)}
-                          className="p-3 hover:bg-gray-100 cursor-pointer text-sm flex items-center"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedUser.includes(user.id)}
-                            readOnly
-                            className="mr-2"
-                          />
-                          {user.name}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {selectedUser.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {selectedUser.map((userId) => {
-                        const user = users.find((u) => u.id === userId);
-                        return (
-                          <Badge
-                            key={userId}
-                            variant="secondary"
-                            className="flex items-center gap-1"
-                          >
-                            {user?.name}
-                            <button
-                              onClick={() => removeUserSelection(userId)}
-                              className="ml-1 text-xs hover:text-red-500"
-                            >
-                              ×
-                            </button>
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Survey Selection */}
-                <div className="relative">
-                  <label className="block text-xs md:text-sm font-bold text-black mb-2">
-                    SELECT SURVEYS
-                  </label>
-                  <Input
-                    type="text"
-                    value={surveySearch}
-                    onChange={(e) => {
-                      setSurveySearch(e.target.value);
-                      setShowSurveyDropdown(true);
-                    }}
-                    onFocus={() => setShowSurveyDropdown(true)}
-                    onBlur={() =>
-                      setTimeout(() => setShowSurveyDropdown(false), 200)
-                    }
-                    placeholder={
-                      surveys.length === 0
-                        ? "No surveys available. Create surveys first."
-                        : "Search and select surveys..."
-                    }
-                    className="rounded-[5px] border-gray-400 p-3 text-sm w-full"
-                    disabled={surveys.length === 0}
-                  />
-                  {showSurveyDropdown && filteredSurveys.length > 0 && (
-                    <div className="absolute z-10 w-full bg-white border border-gray-400 rounded-[5px] mt-1 max-h-40 overflow-y-auto">
-                      {filteredSurveys.map((survey) => (
-                        <div
-                          key={survey.id}
-                          onClick={() => handleSurveySelection(survey.id)}
-                          className="p-3 hover:bg-gray-100 cursor-pointer text-sm flex items-center"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={false}
-                            readOnly
-                            className="mr-2"
-                          />
-                          {survey.name}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {selectedSurveys.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {selectedSurveys.map((surveyId) => {
-                        const survey = surveys.find((s) => s.id === surveyId);
-                        return (
-                          <Badge
-                            key={surveyId}
-                            variant="secondary"
-                            className="flex items-center gap-1"
-                          >
-                            {survey?.name}
-                            <button
-                              onClick={() => removeSurveySelection(surveyId)}
-                              className="ml-1 text-xs hover:text-red-500"
-                            >
-                              ×
-                            </button>
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Confirmation Message */}
-                {confirmationMessage && (
-                  <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded text-sm">
-                    {confirmationMessage}
-                  </div>
-                )}
-
-                {/* Assign Button */}
-                <Button
-                  onClick={assignSurveys}
-                  disabled={
-                    selectedUser.length === 0 || selectedSurveys.length === 0
-                  }
-                  className="w-full bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-600 hover:to-purple-700 p-4 text-sm"
-                >
-                  Assign Survey{selectedSurveys.length > 1 ? "s" : ""} to User
-                  {selectedUser.length > 1 ? "s" : ""}
-                </Button>
-              </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-slate-500">
+                Total Users
+              </p>
+              <p className="text-lg sm:text-xl font-bold text-slate-900 mt-1">
+                {totalAssignments}
+              </p>
+            </div>
+            <div className="bg-blue-50 p-2 rounded-lg">
+              <Users className="w-4 h-4 text-blue-600" />
             </div>
           </div>
+        </div>
 
-          {/* Assigned Surveys List */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Assigned Surveys</h2>
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {Object.entries(userAssignments).map(([userId, surveys]) => {
-                const user = users.find((u) => u.id === userId);
-                if (!user || surveys.length === 0) return null;
-                return (
-                  <div key={userId} className="border rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-semibold">{user.name}</h3>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openEditModal(userId)}
-                            >
-                              <Edit3 className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setUserToDelete(userId);
-                                setShowDeleteConfirm(true);
-                              }}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="mt-2 space-y-1">
-                          {surveys.map((survey) => (
-                            <div
-                              key={survey.id}
-                              className="flex items-center justify-between"
-                            >
-                              <span
-                                className={`text-sm ${
-                                  survey.active
-                                    ? "text-gray-600"
-                                    : "line-through text-gray-400"
-                                }`}
-                              >
-                                {survey.name}
-                              </span>
-                              <Button
-                                variant={survey.active ? "outline" : "default"}
-                                size="sm"
-                                onClick={() =>
-                                  toggleSurveyStatus(userId, survey.id)
-                                }
-                                className={`text-xs ml-2 px-2 py-1 w-20 ${survey.active ? "bg-red-100 text-red-600 border-red-200 hover:bg-red-200" : "bg-green-100 text-green-600 border-green-200 hover:bg-green-200"}`}
-                              >
-                                {survey.active ? "Deactivate" : "Activate"}
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              {Object.keys(userAssignments).length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  No surveys assigned yet
-                </div>
-              )}
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-slate-500">
+                Active
+              </p>
+              <p className="text-lg sm:text-xl font-bold text-green-600 mt-1">
+                {activeAssignments}
+              </p>
+            </div>
+            <div className="bg-green-50 p-2 rounded-lg">
+              <CheckCircle className="w-4 h-4 text-green-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-slate-500">
+                Inactive
+              </p>
+              <p className="text-lg sm:text-xl font-bold text-red-600 mt-1">
+                {inactiveAssignments}
+              </p>
+            </div>
+            <div className="bg-red-50 p-2 rounded-lg">
+              <XCircle className="w-4 h-4 text-red-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-slate-500">
+                Total Surveys
+              </p>
+              <p className="text-lg sm:text-xl font-bold text-purple-600 mt-1">
+                {totalSurveysAssigned}
+              </p>
+            </div>
+            <div className="bg-purple-50 p-2 rounded-lg">
+              <FileText className="w-4 h-4 text-purple-600" />
             </div>
           </div>
         </div>
       </div>
+
+      {/* Tabs */}
+      <div className="bg-white rounded-lg border border-slate-200">
+        <div className="border-b border-slate-200">
+          <div className="flex items-center justify-between px-4 sm:px-6 gap-4">
+            <div className="flex gap-1 overflow-x-auto">
+              <button
+                onClick={() => setFilterTab("all")}
+                className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  filterTab === "all"
+                    ? "border-slate-900 text-slate-900"
+                    : "border-transparent text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                All ({totalAssignments})
+              </button>
+              <button
+                onClick={() => setFilterTab("active")}
+                className={`hidden sm:block px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  filterTab === "active"
+                    ? "border-green-600 text-green-600"
+                    : "border-transparent text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                Active ({activeAssignments})
+              </button>
+              <button
+                onClick={() => setFilterTab("inactive")}
+                className={`hidden sm:block px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  filterTab === "inactive"
+                    ? "border-red-600 text-red-600"
+                    : "border-transparent text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                Inactive ({inactiveAssignments})
+              </button>
+            </div>
+            <div className="relative flex-shrink-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-9 w-48"
+              />
+            </div>
+          </div>
+
+        <div className="p-4 sm:p-6">
+          <div className="space-y-3">
+              {filteredAssignments.length > 0 ? (
+                filteredAssignments.map(([userId, surveys]) => {
+                  const user = users.find((u) => u.id === userId);
+                  if (!user || surveys.length === 0) return null;
+                  return (
+                    <div key={userId} className="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <h3 className="font-semibold text-slate-900">{user.name}</h3>
+                              <p className="text-xs text-slate-500 mt-1">{surveys.length} survey{surveys.length > 1 ? 's' : ''} assigned</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => openEditModal(userId)}
+                                className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setUserToDelete(userId);
+                                  setShowDeleteConfirm(true);
+                                }}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {surveys.map((survey) => (
+                              <span
+                                key={survey.id}
+                                className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${
+                                  survey.active !== false
+                                    ? "bg-slate-100 text-slate-700"
+                                    : "bg-red-100 text-red-700 line-through"
+                                }`}
+                              >
+                                {survey.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+            ) : (
+              <p className="text-center py-12 text-slate-500">No assignments found</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+
+      {/* Create Assignment Modal */}
+      {showCreateModal && (
+        <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create Assignment</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {/* User Selection */}
+              <div className="relative">
+                <label className="block text-xs md:text-sm font-bold text-black mb-2">
+                  SELECT USERS
+                </label>
+                <Input
+                  type="text"
+                  value={userSearch}
+                  onChange={(e) => {
+                    setUserSearch(e.target.value);
+                    setShowUserDropdown(true);
+                  }}
+                  onFocus={() => setShowUserDropdown(true)}
+                  onBlur={() =>
+                    setTimeout(() => setShowUserDropdown(false), 200)
+                  }
+                  placeholder={
+                    users.length === 0
+                      ? "No users available. Create users first."
+                      : "Search and select users..."
+                  }
+                  className="rounded-[5px] border-gray-400 p-3 text-sm w-full"
+                  disabled={users.length === 0}
+                />
+                {showUserDropdown && filteredUsers.length > 0 && (
+                  <div className="absolute z-10 w-full bg-white border border-gray-400 rounded-[5px] mt-1 max-h-40 overflow-y-auto">
+                    {filteredUsers.map((user) => (
+                      <div
+                        key={user.id}
+                        onClick={() => handleUserSelection(user.id)}
+                        className="p-3 hover:bg-gray-100 cursor-pointer text-sm flex items-center"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedUser.includes(user.id)}
+                          readOnly
+                          className="mr-2"
+                        />
+                        {user.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {selectedUser.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedUser.map((userId) => {
+                      const user = users.find((u) => u.id === userId);
+                      return (
+                        <Badge
+                          key={userId}
+                          variant="secondary"
+                          className="flex items-center gap-1"
+                        >
+                          {user?.name}
+                          <button
+                            onClick={() => removeUserSelection(userId)}
+                            className="ml-1 text-xs hover:text-red-500"
+                          >
+                            ×
+                          </button>
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Survey Selection */}
+              <div className="relative">
+                <label className="block text-xs md:text-sm font-bold text-black mb-2">
+                  SELECT SURVEYS
+                </label>
+                <Input
+                  type="text"
+                  value={surveySearch}
+                  onChange={(e) => {
+                    setSurveySearch(e.target.value);
+                    setShowSurveyDropdown(true);
+                  }}
+                  onFocus={() => setShowSurveyDropdown(true)}
+                  onBlur={() =>
+                    setTimeout(() => setShowSurveyDropdown(false), 200)
+                  }
+                  placeholder={
+                    surveys.length === 0
+                      ? "No surveys available. Create surveys first."
+                      : "Search and select surveys..."
+                  }
+                  className="rounded-[5px] border-gray-400 p-3 text-sm w-full"
+                  disabled={surveys.length === 0}
+                />
+                {showSurveyDropdown && filteredSurveys.length > 0 && (
+                  <div className="absolute z-10 w-full bg-white border border-gray-400 rounded-[5px] mt-1 max-h-40 overflow-y-auto">
+                    {filteredSurveys.map((survey) => (
+                      <div
+                        key={survey.id}
+                        onClick={() => handleSurveySelection(survey.id)}
+                        className="p-3 hover:bg-gray-100 cursor-pointer text-sm flex items-center"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={false}
+                          readOnly
+                          className="mr-2"
+                        />
+                        {survey.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {selectedSurveys.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedSurveys.map((surveyId) => {
+                      const survey = surveys.find((s) => s.id === surveyId);
+                      return (
+                        <Badge
+                          key={surveyId}
+                          variant="secondary"
+                          className="flex items-center gap-1"
+                        >
+                          {survey?.name}
+                          <button
+                            onClick={() => removeSurveySelection(surveyId)}
+                            className="ml-1 text-xs hover:text-red-500"
+                          >
+                            ×
+                          </button>
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Assign Button */}
+              <Button
+                onClick={() => {
+                  assignSurveys();
+                  setShowCreateModal(false);
+                }}
+                disabled={
+                  selectedUser.length === 0 || selectedSurveys.length === 0
+                }
+                className="w-full bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-600 hover:to-purple-700 p-4 text-sm"
+              >
+                Assign Survey{selectedSurveys.length > 1 ? "s" : ""} to User
+                {selectedUser.length > 1 ? "s" : ""}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Edit User Modal */}
       {isEditModalOpen && editingUser && (
