@@ -307,6 +307,18 @@ function App() {
             onLogout={handleLogout}
           />
         );
+      case "profile":
+        return (
+          <ProfileSetup
+            email={clientAdminData.email}
+            onComplete={handleProfileComplete}
+            isEdit={true}
+            existingProfile={clientAdminData?.profile}
+            setActiveTab={setActiveTab}
+            onLogout={handleLogout}
+            onProfileEdit={handleProfileEdit}
+          />
+        );
       default:
         return (
           <SurveyPersonnel
@@ -449,13 +461,38 @@ function App() {
               </div>
             ) : clientAdminData &&
               (clientAdminData.isFirstTime === true || showProfileEdit) ? (
-              <ProfileSetup
-                email={clientAdminData.email}
-                onComplete={handleProfileComplete}
-                isEdit={showProfileEdit}
-                existingProfile={clientAdminData?.profile}
-                setActiveTab={setActiveTab}
-              />
+              <>
+                <TopBar
+                  setActiveTab={setActiveTab}
+                  onLogout={handleLogout}
+                  onProfileEdit={handleProfileEdit}
+                  isMobileMenuOpen={isMobileMenuOpen}
+                  setIsMobileMenuOpen={setIsMobileMenuOpen}
+                  profile={profileCache || clientAdminData?.profile}
+                />
+                <Sidebar
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  onSidebarToggle={setSidebarOpen}
+                  isMobileOpen={isMobileMenuOpen}
+                  setIsMobileOpen={setIsMobileMenuOpen}
+                />
+                <main
+                  className={`transition-all duration-300 pt-16 sm:pt-20 md:pt-24 p-4 sm:p-6 md:p-8 mt-10 ${
+                    sidebarOpen ? "xl:ml-64" : "xl:ml-16"
+                  }`}
+                >
+                  <ProfileSetup
+                    email={clientAdminData.email}
+                    onComplete={handleProfileComplete}
+                    isEdit={showProfileEdit}
+                    existingProfile={clientAdminData?.profile}
+                    setActiveTab={setActiveTab}
+                    onLogout={handleLogout}
+                    onProfileEdit={handleProfileEdit}
+                  />
+                </main>
+              </>
             ) : (
               <>
                 <TopBar

@@ -179,6 +179,7 @@ export const completeProfileSetup = async (email, profileData) => {
         industry: profileData.industry,
         phone: profileData.phone,
         address: profileData.address,
+        profile_photo: profileData.profileImage || "",
         is_first_time: true,
         status: "active",
         isActive: true,

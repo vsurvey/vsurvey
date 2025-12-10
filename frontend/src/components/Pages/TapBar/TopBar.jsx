@@ -68,15 +68,15 @@ const TopBar = ({
                 className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center overflow-hidden ${
                   isSuperAdmin
                     ? "bg-gray-600"
-                    : profile?.profileImage
+                    : (profile?.profile_photo || profile?.profileImage)
                     ? "bg-transparent"
                     : "bg-gray-600"
                 }`}
               >
                 {isSuperAdmin ? (
                   <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                ) : profile?.profileImage ? (
-                  <img src={profile.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                ) : (profile?.profile_photo || profile?.profileImage) ? (
+                  <img src={profile?.profile_photo || profile?.profileImage} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
                   <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 )}
@@ -90,17 +90,6 @@ const TopBar = ({
             </button>
             {isProfileDropdownOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border z-50">
-                {!isSuperAdmin && (
-                  <button
-                    onClick={() => {
-                      onProfileEdit && onProfileEdit();
-                      setIsProfileDropdownOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Profile
-                  </button>
-                )}
                 <button
                   onClick={() => {
                     onLogout();

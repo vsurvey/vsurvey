@@ -41,6 +41,7 @@ import {
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { setSuperAdminUpdateCallback } from "../../../services/superAdminNotification";
+import { compressAndUploadImage, generateImagePath } from "../../../utils/imageUtils";
 
 import { FIREBASE_CONFIG } from "../../../config/firebaseConfig";
 
@@ -77,6 +78,7 @@ const SuperAdminDashboardAPI = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   // Load clients from Firebase with real-time listener for status changes only
   useEffect(() => {
@@ -185,6 +187,8 @@ const SuperAdminDashboardAPI = () => {
         userCredential.user.uid
       );
 
+
+
       const newClient = {
         activatedAt: "",
         clientId: formData.clientId.trim() || `client_${Date.now()}`,
@@ -201,6 +205,7 @@ const SuperAdminDashboardAPI = () => {
         is_first_time: false,
         name: "",
         phone: "",
+        profile_photo: "",
         updated_at: new Date().toISOString(),
         tempPassword: tempPassword, // Store for deletion purposes
       };
@@ -211,7 +216,7 @@ const SuperAdminDashboardAPI = () => {
       setMessage(
         `✅ Client created successfully! Password setup email sent to ${formData.email} (Check spam folder if not received)`
       );
-      setTimeout(() => setMessage(""), 10000);
+      setTimeout(() => setMessage(""), 3000);
 
       // Reload clients
       loadClients();
@@ -229,7 +234,7 @@ const SuperAdminDashboardAPI = () => {
       } else {
         setMessage("❌ Failed to create client: " + error.message);
       }
-      setTimeout(() => setMessage(""), 8000);
+      setTimeout(() => setMessage(""), 3000);
     } finally {
       setLoading(false);
       setIsCreatingUser(false); // Clear flag
@@ -433,13 +438,13 @@ const SuperAdminDashboardAPI = () => {
         `✅ Client deleted successfully!`
       );
 
-      setTimeout(() => setMessage(""), 5000);
+      setTimeout(() => setMessage(""), 3000);
       closeDeleteModal();
       loadClients();
     } catch (error) {
       console.error("Error deleting client:", error);
       setMessage("❌ Failed to delete client: " + error.message);
-      setTimeout(() => setMessage(""), 5000);
+      setTimeout(() => setMessage(""), 3000);
     } finally {
       setIsDeleting(false);
     }
@@ -468,7 +473,7 @@ const SuperAdminDashboardAPI = () => {
       setMessage(
         `✅ user created and password setup email sent to ${email}`
       );
-      setTimeout(() => setMessage(""), 8000);
+      setTimeout(() => setMessage(""), 3000);
     } catch (error) {
       console.error("Error creating Firebase user:", error);
       if (error.code === "email-already-in-use") {
@@ -476,7 +481,7 @@ const SuperAdminDashboardAPI = () => {
         await resendPasswordEmail(email);
       } else {
         setMessage(`❌ Failed to create user: ${error.message}`);
-        setTimeout(() => setMessage(""), 8000);
+        setTimeout(() => setMessage(""), 3000);
       }
     }
   };
@@ -485,7 +490,7 @@ const SuperAdminDashboardAPI = () => {
     try {
       await sendPasswordResetEmail(auth, email);
       setMessage(`✅ Password setup email sent to ${email}`);
-      setTimeout(() => setMessage(""), 5000);
+      setTimeout(() => setMessage(""), 3000);
     } catch (error) {
       console.error("Error sending password reset email:", error);
       console.error("Error code:", error.code);
@@ -500,7 +505,7 @@ const SuperAdminDashboardAPI = () => {
       } else {
         setMessage(`❌ Failed to send email: ${error.message}`);
       }
-      setTimeout(() => setMessage(""), 8000);
+      setTimeout(() => setMessage(""), 3000);
     }
   };
 
@@ -792,6 +797,7 @@ const SuperAdminDashboardAPI = () => {
                         placeholder="Auto-generated if empty"
                       />
                     </div>
+
 
                     <Button
                       type="submit"

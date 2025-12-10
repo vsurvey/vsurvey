@@ -240,7 +240,7 @@ const SurveyResults = () => {
                           variant="outline"
                           className="flex items-center gap-2 text-sm sm:text-base px-3 sm:px-4 py-2"
                         >
-                          View
+                          
                           {isExpanded ? (
                             <ChevronUp className="w-3 h-3 sm:w-4 sm:h-4" />
                           ) : (
