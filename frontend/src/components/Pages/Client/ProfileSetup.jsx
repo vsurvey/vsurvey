@@ -262,7 +262,7 @@ const ProfileSetup = ({
                       onClick={handleRemoveImage}
                       className="text-sm text-red-600 hover:text-red-700"
                     >
-                      Remove Image
+                      Remove Profile
                     </Button>
                   </div>
                 )}
