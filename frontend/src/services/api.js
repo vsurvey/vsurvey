@@ -11,7 +11,6 @@ class ApiService {
   async getAuthToken() {
     // Skip during user creation to avoid auth conflicts
     if (window.isCreatingUser) {
-      console.log('DEBUG: Skipping getAuthToken during user creation');
       return null;
     }
 
@@ -51,7 +50,6 @@ class ApiService {
   async request(endpoint, options = {}) {
     // Skip all API requests during user creation
     if (window.isCreatingUser) {
-      console.log('DEBUG: Skipping API request during user creation');
       return { items: [], total: 0, page: 1, size: 10, pages: 0 };
     }
     

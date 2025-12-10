@@ -58,7 +58,7 @@ const AssignUser = ({
 
     // Listen for user updates
     const handleUsersUpdated = () => {
-      console.log("Users updated, reloading...");
+     
       loadUsers();
     };
 
@@ -83,7 +83,7 @@ const AssignUser = ({
         return;
       }
 
-      console.log("Loading users created by:", currentUser.email);
+     
       const usersRef = collection(db, "users");
       const snapshot = await getDocs(usersRef);
       const usersList = [];
@@ -94,7 +94,7 @@ const AssignUser = ({
           userData.status === "active" &&
           userData.is_active === true
         ) {
-          console.log("Found active user:", userData);
+         
           usersList.push({
             id: doc.id,
             name:
@@ -105,7 +105,7 @@ const AssignUser = ({
           });
         }
       });
-      console.log("Loaded active users:", usersList);
+     
       setUsers(usersList);
     } catch (error) {
       console.error("Error loading users:", error);
@@ -352,9 +352,6 @@ const AssignUser = ({
             const pairKey = `${userId}_${surveyId}`;
 
             if (existingPairs.has(pairKey)) {
-              console.log(
-                `Skipping duplicate assignment: User ${userId}, Survey ${surveyId}`
-              );
               skippedCount++;
               continue;
             }
@@ -481,9 +478,7 @@ const AssignUser = ({
           ),
         }));
 
-        console.log(
-          `Survey ${surveyId} for user ${userId} ${newStatus ? "activated" : "deactivated"}`
-        );
+       
       } else {
         console.error("Assignment document not found");
       }
@@ -598,9 +593,7 @@ const AssignUser = ({
 
         for (const surveyId of selectedSurveysForUser) {
           if (existingSurveyIds.has(surveyId)) {
-            console.log(
-              `Skipping duplicate assignment: User ${editingUser.id}, Survey ${surveyId}`
-            );
+           
             skippedCount++;
             continue;
           }
@@ -712,9 +705,7 @@ const AssignUser = ({
         return updated;
       });
 
-      console.log(
-        `Deleted ${deletePromises.length} assignments for user ${userId}`
-      );
+
     } catch (error) {
       console.error("Error deleting user assignments:", error);
     }

@@ -78,25 +78,19 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
   // Function to get client ID using client email
   const getClientData = async (clientEmail) => {
     try {
-      console.log("Searching for client with email:", clientEmail);
+    
       const superadminId = "hdXje7ZvCbj7eOugVLiZ";
       const clientsRef = collection(db, "superadmin", superadminId, "clients");
       const q = query(clientsRef, where("email", "==", clientEmail));
       const clientsSnapshot = await getDocs(q);
-      console.log("Found clients:", clientsSnapshot.docs.length);
+     
 
       if (!clientsSnapshot.empty) {
         const clientDoc = clientsSnapshot.docs[0];
-        console.log(
-          "Match found! Client ID:",
-          clientDoc.id,
-          "Superadmin ID:",
-          superadminId
-        );
+        
         return { clientId: clientDoc.id, superadminId: superadminId };
       }
 
-      console.log("No matching client found");
       return { clientId: null, superadminId: null };
     } catch (error) {
       console.error("Error getting client data:", error);
@@ -110,19 +104,14 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
         // Wait for auth to be ready
         const currentUser = auth.currentUser;
         if (!currentUser?.email) {
-          console.log("Auth not ready, retrying in 1 second...");
+        
           setTimeout(initializeClientData, 1000);
           return;
         }
 
-        console.log("Getting client data for user:", currentUser.email);
         const { clientId: id, superadminId: superAdminId } =
           await getClientData(currentUser.email);
-        console.log("Retrieved client data:", {
-          clientId: id,
-          superadminId: superAdminId,
-        });
-
+        
         if (!id) {
           console.warn(
             "Unable to find client ID, but continuing with email-based queries"
@@ -151,22 +140,16 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
           return;
         }
 
-        console.log("Setting up user listener for:", currentUser.email);
-
+       
         const usersRef = collection(db, "users");
         const q = query(usersRef, where("created_by", "==", currentUser.email));
 
         const unsubscribe = onSnapshot(
           q,
           (snapshot) => {
-            console.log(
-              "Users snapshot received, count:",
-              snapshot.docs.length
-            );
             const usersData = snapshot.docs
               .map((doc) => {
                 const data = { id: doc.id, ...doc.data() };
-                console.log("User data:", data);
                 return data;
               })
               .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort in JavaScript
@@ -200,14 +183,6 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
     };
   }, []); // Remove clientId dependency
 
-  console.log("Using clientId:", clientId);
-  console.log("Profile:", profile);
-  console.log(
-    "Database path will be: superadmin/hdXje7ZvCbj7eOugVLiZ/clients/" +
-      clientId +
-      "/users"
-  );
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -226,7 +201,6 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
       const clientEmail = currentUser.email;
 
       // First create Firebase user to get the UID
-      console.log("Creating Firebase user for:", formData.email.trim());
       const tempPassword = `Temp${Date.now()}!`;
       const userCredential = await createUserWithEmailAndPassword(
         secondaryAuth,
@@ -234,24 +208,13 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
         tempPassword
       );
       const firebaseUID = userCredential.user.uid;
-      console.log("Firebase user created with UID:", firebaseUID);
 
       // Send password reset email
       await sendPasswordResetEmail(secondaryAuth, formData.email.trim());
-      console.log("Password reset email sent");
 
       // Get fresh client data at time of user creation
-      console.log("Getting fresh client data for user creation...");
       const { clientId: currentClientId, superadminId: currentSuperadminId } =
         await getClientData(clientEmail);
-      console.log("Fresh client data:", {
-        clientId: currentClientId,
-        superadminId: currentSuperadminId,
-      });
-      console.log("User data will include:", {
-        client_id: currentClientId,
-        superadmin_id: currentSuperadminId,
-      });
 
       // Create user document with Firebase UID as document ID
       const userData = {
@@ -274,16 +237,8 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
         superadmin_id: currentSuperadminId,
       };
 
-      console.log(
-        "Creating user document with Firebase UID as document ID:",
-        firebaseUID
-      );
       const userDocRef = doc(db, "users", firebaseUID);
       await setDoc(userDocRef, userData);
-
-      console.log(
-        "✅ User successfully added to /users collection with Firebase UID as document ID"
-      );
 
       setFormData({ full_name: "", email: "" });
       setMessage(
@@ -371,12 +326,10 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
           if (response.ok) {
             const result = await response.json();
             if (result.success) {
-              authDeleted = true;
-              console.log("User deleted from Firebase Auth via backend");
+              authDeleted = true;             
             }
           }
         } catch (backendError) {
-          console.log("Backend deletion failed, trying client-side...");
         }
 
         // Delete from Firestore (always do this)
@@ -386,7 +339,6 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
             const userRef = doc(db, "users", userToDelete.id);
             await deleteDoc(userRef);
             firestoreDeleted = true;
-            console.log(`User ${userToDelete.id} deleted from Firestore`);
           }
         } catch (firestoreError) {
           console.error("Firestore deletion failed:", firestoreError);
@@ -455,17 +407,14 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
 
   const createFirebaseUser = async (email) => {
     try {
-      console.log("Creating user for:", email);
       const tempPassword = `Temp${Date.now()}!`;
       const userCredential = await createUserWithEmailAndPassword(
         secondaryAuth,
         email,
         tempPassword
       );
-      console.log("Firebase user created:", userCredential.user.uid);
 
       await sendPasswordResetEmail(secondaryAuth, email);
-      console.log("Password reset email sent");
 
       setMessage(
         `✅ User created and password setup email sent to ${email}`
@@ -484,9 +433,7 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
 
   const resendPasswordEmail = async (email) => {
     try {
-      console.log("Attempting to send password reset email to:", email);
       await sendPasswordResetEmail(secondaryAuth, email);
-      console.log("Password reset email sent successfully");
       setMessage(`✅ Password setup email sent to ${email}`);
       setTimeout(() => setMessage(""), 5000);
     } catch (error) {

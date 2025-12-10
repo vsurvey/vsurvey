@@ -25,7 +25,6 @@ export const clientAdminExists = async (email) => {
  */
 export const activateClientAdmin = async (email) => {
   try {
-    console.log("Activating client admin:", email);
 
     // Find the client admin by email
     const superadminId = "hdXje7ZvCbj7eOugVLiZ";
@@ -34,7 +33,6 @@ export const activateClientAdmin = async (email) => {
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
-      console.log("Client admin not found:", email);
       return false;
     }
 
@@ -52,15 +50,8 @@ export const activateClientAdmin = async (email) => {
           activatedAt: new Date().toISOString(),
         }
       );
-
-      console.log("Client admin activated successfully:", email);
       return true;
     } else {
-      console.log(
-        "Client admin already active or not pending:",
-        email,
-        clientData.status
-      );
       return true; // Return true even if already active to prevent duplicate creation
     }
   } catch (error) {

@@ -104,10 +104,6 @@ const SuperAdminDashboardAPI = () => {
         const hasChanges =
           JSON.stringify(prevClients) !== JSON.stringify(clients);
         if (hasChanges) {
-          console.log(
-            "Client status updated:",
-            clients.filter((c) => c.status === "active").map((c) => c.email)
-          );
           return clients;
         }
         return prevClients;
@@ -140,16 +136,11 @@ const SuperAdminDashboardAPI = () => {
         });
       });
 
-      console.log("Loaded clients:", clients); // Debug log
       setClientAdmins(clients);
 
       // Check if any client status changed from pending to active
       const activeClients = clients.filter((c) => c.status === "active");
       if (activeClients.length > 0) {
-        console.log(
-          "Active clients detected:",
-          activeClients.map((c) => c.email)
-        );
       }
     } catch (error) {
       console.error("Error loading clients:", error);
@@ -172,8 +163,6 @@ const SuperAdminDashboardAPI = () => {
       setIsCreatingUser(true); // Set flag to prevent navigation
       window.isCreatingUser = true; // Set global flag
 
-      console.log("Creating Firebase user for:", formData.email.trim());
-
       // Create Firebase user with temporary password using secondary auth
       const tempPassword = `Temp${Date.now()}!`; // Temporary password
       const userCredential = await createUserWithEmailAndPassword(
@@ -181,15 +170,9 @@ const SuperAdminDashboardAPI = () => {
         formData.email.trim(),
         tempPassword
       );
-      console.log(
-        "Firebase user created successfully:",
-        userCredential.user.uid
-      );
 
       // Send password reset email immediately using secondary auth
-      console.log("Sending password reset email...");
       await sendPasswordResetEmail(secondaryAuth, formData.email.trim());
-      console.log("Password reset email sent successfully");
 
       // Create client document using Firebase UID as document ID
       const superadminId = "hdXje7ZvCbj7eOugVLiZ";
@@ -222,7 +205,6 @@ const SuperAdminDashboardAPI = () => {
       };
 
       await setDoc(clientDocRef, newClient);
-      console.log("Client document created successfully");
 
       setFormData({ name: "", email: "", clientId: "" });
       setMessage(
@@ -237,11 +219,11 @@ const SuperAdminDashboardAPI = () => {
       console.error("Error code:", error.code);
       console.error("Error message:", error.message);
 
-      if (error.code === "auth/email-already-in-use") {
-        setMessage("❌ Email already exists in Firebase Auth");
-      } else if (error.code === "auth/weak-password") {
+      if (error.code === "email-already-in-use") {
+        setMessage("❌ Email already exists");
+      } else if (error.code === "weak-password") {
         setMessage("❌ Password is too weak");
-      } else if (error.code === "auth/invalid-email") {
+      } else if (error.code === "invalid-email") {
         setMessage("❌ Invalid email address");
       } else {
         setMessage("❌ Failed to create client: " + error.message);
@@ -298,16 +280,12 @@ const SuperAdminDashboardAPI = () => {
 
   const confirmDelete = async () => {
     try {
-      console.log("=== STARTING CLIENT DELETION ===");
-      console.log("Client ID:", clientToDelete.id);
-      console.log("Firebase UID:", clientToDelete.firebaseUid);
 
       // Try to delete from Firebase Auth using backend
       const superadminId = "hdXje7ZvCbj7eOugVLiZ";
       let authDeleted = false;
 
       try {
-        console.log("Attempting to delete Firebase Auth user via backend...");
         const response = await fetch(
           `${import.meta.env.VITE_API_BASE_URL}/api/delete-user/${clientToDelete.firebaseUid || clientToDelete.id}`,
           {
@@ -321,12 +299,10 @@ const SuperAdminDashboardAPI = () => {
         if (response.ok) {
           const result = await response.json();
           if (result.success) {
-            console.log("✅ Firebase Auth user deleted via backend");
             authDeleted = true;
           }
         }
       } catch (backendError) {
-        console.log("Backend not available, trying client-side deletion...");
 
         // Fallback: Try client-side deletion with temp password
         if (clientToDelete.tempPassword) {
@@ -346,7 +322,6 @@ const SuperAdminDashboardAPI = () => {
               (clientToDelete.firebaseUid || clientToDelete.id)
             ) {
               await deleteUser(clientCredential.user);
-              console.log("✅ Firebase Auth user deleted client-side");
               authDeleted = true;
             } else {
               console.error("UID mismatch - deletion aborted for safety");
@@ -370,9 +345,6 @@ const SuperAdminDashboardAPI = () => {
       }
 
       if (!authDeleted) {
-        console.log(
-          "⚠️ Firebase Auth user will remain (all deletion methods failed)"
-        );
       }
 
       // Delete all users created by this client
@@ -388,7 +360,6 @@ const SuperAdminDashboardAPI = () => {
       });
 
       await Promise.all(userDeletePromises);
-      console.log(`✅ Deleted ${userDeletePromises.length} users`);
 
       // Delete all surveys for this client
       const surveysRef = collection(
@@ -407,7 +378,6 @@ const SuperAdminDashboardAPI = () => {
       });
 
       await Promise.all(surveyDeletePromises);
-      console.log(`✅ Deleted ${surveyDeletePromises.length} surveys`);
 
       // Delete all questions for this client
       const questionsRef = collection(
@@ -426,7 +396,6 @@ const SuperAdminDashboardAPI = () => {
       });
 
       await Promise.all(questionDeletePromises);
-      console.log(`✅ Deleted ${questionDeletePromises.length} questions`);
 
       // Delete all survey assignments for this client
       const assignmentsRef = collection(
@@ -445,9 +414,6 @@ const SuperAdminDashboardAPI = () => {
       });
 
       await Promise.all(assignmentDeletePromises);
-      console.log(
-        `✅ Deleted ${assignmentDeletePromises.length} survey assignments`
-      );
 
       // Delete client document
       const clientDocRef = doc(
@@ -458,13 +424,10 @@ const SuperAdminDashboardAPI = () => {
         clientToDelete.id
       );
       await deleteDoc(clientDocRef);
-      console.log("✅ Client document deleted from Firestore");
 
       const authMessage = authDeleted
-        ? "and Firebase Auth"
-        : "(Firebase Auth user remains)";
       setMessage(
-        `✅ Client deleted successfully from Firestore ${authMessage}!`
+        `✅ Client deleted successfully!`
       );
 
       setTimeout(() => setMessage(""), 5000);
@@ -479,7 +442,6 @@ const SuperAdminDashboardAPI = () => {
 
   const createFirebaseUser = async (email) => {
     try {
-      console.log("Creating Firebase user for:", email);
       // Create user with temporary password
       const tempPassword = `Temp${Date.now()}!`;
       const userCredential = await createUserWithEmailAndPassword(
@@ -487,7 +449,6 @@ const SuperAdminDashboardAPI = () => {
         email,
         tempPassword
       );
-      console.log("Firebase user created:", userCredential.user.uid);
 
       // Re-authenticate as SuperAdmin to maintain session
       await signInWithEmailAndPassword(
@@ -495,19 +456,17 @@ const SuperAdminDashboardAPI = () => {
         "superadmin@vsurvey.com",
         "superadmin123"
       );
-      console.log("Re-authenticated as SuperAdmin");
 
       // Send password reset email immediately
       await sendPasswordResetEmail(auth, email);
-      console.log("Password reset email sent");
 
       setMessage(
-        `✅ Firebase user created and password setup email sent to ${email}`
+        `✅ user created and password setup email sent to ${email}`
       );
       setTimeout(() => setMessage(""), 8000);
     } catch (error) {
       console.error("Error creating Firebase user:", error);
-      if (error.code === "auth/email-already-in-use") {
+      if (error.code === "email-already-in-use") {
         // User exists, just send reset email
         await resendPasswordEmail(email);
       } else {
@@ -519,9 +478,7 @@ const SuperAdminDashboardAPI = () => {
 
   const resendPasswordEmail = async (email) => {
     try {
-      console.log("Attempting to send password reset email to:", email);
       await sendPasswordResetEmail(auth, email);
-      console.log("Password reset email sent successfully");
       setMessage(`✅ Password setup email sent to ${email}`);
       setTimeout(() => setMessage(""), 5000);
     } catch (error) {
@@ -529,11 +486,11 @@ const SuperAdminDashboardAPI = () => {
       console.error("Error code:", error.code);
       console.error("Error message:", error.message);
 
-      if (error.code === "auth/user-not-found") {
+      if (error.code === "user-not-found") {
         setMessage(
-          `❌ User ${email} not found in Firebase Auth. Please create the user first.`
+          `❌ User ${email} not found. Please create the user first.`
         );
-      } else if (error.code === "auth/invalid-email") {
+      } else if (error.code === "invalid-email") {
         setMessage(`❌ Invalid email address: ${email}`);
       } else {
         setMessage(`❌ Failed to send email: ${error.message}`);
@@ -578,9 +535,6 @@ const SuperAdminDashboardAPI = () => {
           });
 
           await Promise.all(updatePromises);
-          console.log(
-            `Deactivated ${updatePromises.length} users under client ${client.email}`
-          );
         }
       }
 
@@ -657,11 +611,6 @@ const SuperAdminDashboardAPI = () => {
         questions.push({ id: doc.id, ...doc.data() });
       });
 
-      console.log("Final client details:", {
-        users: users.length,
-        surveys: surveys.length,
-        questions: questions.length,
-      });
       setClientDetails({ users, surveys, questions });
     } catch (error) {
       console.error("Error fetching client details:", error);

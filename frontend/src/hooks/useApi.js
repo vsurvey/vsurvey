@@ -59,7 +59,6 @@ export const useUsers = () => {
   const createUser = useCallback(async (userData) => {
     // Skip backend API during user creation
     if (window.isCreatingUser) {
-      console.log('DEBUG: Skipping backend createUser during user creation');
       return { success: true };
     }
     

@@ -36,20 +36,19 @@ const startClientStatusMonitoring = (email, onLogout) => {
   statusListener = onSnapshot(
     q,
     (snapshot) => {
-      console.log("Client status check for:", email);
+     
       if (snapshot.empty) {
         // Client document no longer exists - client was deleted
-        console.log("Client deleted, logging out:", email);
         auth.signOut();
         onLogout();
       } else {
         const clientData = snapshot.docs[0].data();
-        console.log("Client data:", clientData);
+       
 
         // Check if client is deactivated (isActive: false)
         // Don't auto-logout pending clients (new clients setting up profile)
         if (clientData.isActive === false && clientData.status !== "pending") {
-          console.log("Client deactivated, logging out:", email);
+         
           auth.signOut();
           onLogout();
         }
@@ -168,11 +167,11 @@ function App() {
     // Listen for Firebase auth state changes
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        console.log("Auth state changed:", user.email);
+       
 
         // Check if it's superadmin by email
         if (user.email === "superadmin@vsurvey.com") {
-          console.log("SuperAdmin detected, staying on SuperAdmin dashboard");
+         
           localStorage.setItem(
             "currentSuperAdmin",
             JSON.stringify({ email: user.email })
@@ -184,22 +183,13 @@ function App() {
 
         // Skip navigation if we're in the middle of creating a user
         if (window.isCreatingUser) {
-          console.log(
-            "User creation in progress, skipping navigation and activation"
-          );
           return;
         }
 
         // Skip activation for newly created users - they should remain pending
         if (window.justCreatedUser === user.email) {
-          console.log(
-            "Newly created user detected, skipping auto-activation:",
-            user.email
-          );
           return;
         }
-
-        console.log("Client user detected, checking profile setup");
         // Start monitoring client status for auto-logout
         startClientStatusMonitoring(user.email, () => {
           setShowDeactivationMessage(true);
@@ -224,12 +214,7 @@ function App() {
               const clientData = snapshot.docs[0].data();
               // is_first_time: false = needs setup, true = setup complete, undefined = needs setup
               const needsSetup = clientData.is_first_time !== true;
-
-              console.log("Profile setup check:", {
-                is_first_time: clientData.is_first_time,
-                needsSetup,
-              });
-              console.log("Client data from Firebase:", clientData);
+              
               // Cache the profile data
               setProfileCache(clientData);
               setClientAdminData((prev) => {

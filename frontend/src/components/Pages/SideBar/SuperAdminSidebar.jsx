@@ -25,12 +25,12 @@ const SuperAdminSidebar = ({ activeTab, setActiveTab, onSidebarToggle }) => {
     {
       id: "clients",
       label: "Create Clients",
-      icon: <Building className="w-4 h-4" />,
+      icon: <Building className="w-5 h-5" />,
     },
     {
       id: "results",
       label: "Survey Results",
-      icon: <BarChart3 className="w-4 h-4" />,
+      icon: <BarChart3 className="w-5 h-5" />,
     },
   ];
 

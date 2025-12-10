@@ -28,7 +28,6 @@ export default function SetPassword({ onPasswordSet }) {
 
       // Try to sign in with Firebase
       await signInWithEmailAndPassword(auth, email.trim(), password.trim());
-      console.log('Firebase authentication successful for:', email);
 
       // Check if this is a client admin
       const isClientAdmin = await clientAdminExists(email.trim());
@@ -36,7 +35,6 @@ export default function SetPassword({ onPasswordSet }) {
       if (isClientAdmin) {
         // Activate client admin status
         await activateClientAdmin(email.trim());
-        console.log('Client admin activated:', email);
         onPasswordSet('client');
       } else {
         // Check if this is a regular user
@@ -45,7 +43,6 @@ export default function SetPassword({ onPasswordSet }) {
         if (isUser) {
           // Activate user status
           await activateUser(email.trim());
-          console.log('User activated:', email);
           onPasswordSet('user');
         } else {
           setError('User not found in the system. Please contact your administrator.');

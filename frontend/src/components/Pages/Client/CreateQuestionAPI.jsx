@@ -130,7 +130,7 @@ const CreateQuestionAPI = ({
         return;
       }
 
-      console.log("Loading questions for clientId:", clientId);
+     
       const questionsRef = collection(
         db,
         "superadmin",
@@ -207,7 +207,7 @@ const CreateQuestionAPI = ({
         throw new Error("No client ID found for current user");
       }
 
-      console.log("Saving question for clientId:", clientId);
+     
       const questionsRef = collection(
         db,
         "superadmin",
@@ -217,10 +217,7 @@ const CreateQuestionAPI = ({
         "questions"
       );
       await addDoc(questionsRef, questionData);
-      console.log(
-        "Question saved to Firebase successfully for client:",
-        clientId
-      );
+     
 
       // Also save to backend API
       await createQuestion(questionData);

@@ -47,7 +47,6 @@ const Login = ({ onLogin }) => {
         
         // Skip activation if this is during user creation process
         if (window.isCreatingUser) {
-          console.log('User creation in progress, skipping activation')
           return
         }
         
@@ -65,24 +64,18 @@ const Login = ({ onLogin }) => {
           const isPending = await isClientAdminPending(email)
           
           if (isPending) {
-            console.log('DEBUG: Attempting to activate client admin:', email)
             const activated = await activateClientAdmin(email)
-            console.log('DEBUG: Client admin activation result:', activated)
             
             if (activated) {
-              console.log('✅ Client admin activated successfully:', email)
               // Get fresh token after activation
               const freshToken = await result.user.getIdToken(true)
               localStorage.setItem('firebaseToken', freshToken)
             } else {
-              console.log('❌ Failed to activate client admin:', email)
             }
           }
         } else {
           // Check if regular user exists in our database
-          console.log('DEBUG: Checking if regular user exists:', email)
           const regularUserExists = await userExists(email)
-          console.log('DEBUG: Regular user exists:', regularUserExists)
           
           if (regularUserExists) {
             // Regular users cannot log in on web
@@ -90,9 +83,7 @@ const Login = ({ onLogin }) => {
             setTimeout(() => setErrorMessage(''), 5000)
             setIsLoading(false)
             return
-          } else {
-            console.log('❌ User not found in database:', email)
-          }
+          } 
         }
         
         // Wait a moment for Firebase auth state to update

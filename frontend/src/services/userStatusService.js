@@ -18,7 +18,6 @@ export const userExists = async (email) => {
  */
 export const activateUser = async (email) => {
   try {
-    console.log('Activating user:', email);
     
     // Find the user by email
     const usersRef = collection(db, "users");
@@ -26,7 +25,6 @@ export const activateUser = async (email) => {
     const snapshot = await getDocs(q);
     
     if (snapshot.empty) {
-      console.log('User not found:', email);
       return false;
     }
     
@@ -42,10 +40,8 @@ export const activateUser = async (email) => {
         activatedAt: new Date().toISOString()
       });
       
-      console.log('User activated successfully:', email);
       return true;
     } else {
-      console.log('User already active or not pending:', email, userData.status);
       return true; // Return true even if already active to prevent duplicate creation
     }
     
