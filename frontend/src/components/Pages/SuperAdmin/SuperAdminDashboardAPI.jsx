@@ -76,6 +76,7 @@ const SuperAdminDashboardAPI = () => {
   const [editFormData, setEditFormData] = useState({ name: "" });
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Load clients from Firebase with real-time listener for status changes only
   useEffect(() => {
@@ -276,10 +277,12 @@ const SuperAdminDashboardAPI = () => {
   const closeDeleteModal = () => {
     setIsDeleteModalOpen(false);
     setClientToDelete(null);
+    setIsDeleting(false);
   };
 
   const confirmDelete = async () => {
     try {
+      setIsDeleting(true);
 
       // Try to delete from Firebase Auth using backend
       const superadminId = "hdXje7ZvCbj7eOugVLiZ";
@@ -437,6 +440,8 @@ const SuperAdminDashboardAPI = () => {
       console.error("Error deleting client:", error);
       setMessage("❌ Failed to delete client: " + error.message);
       setTimeout(() => setMessage(""), 5000);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -1258,8 +1263,9 @@ const SuperAdminDashboardAPI = () => {
                   type="button"
                   variant="destructive"
                   onClick={confirmDelete}
+                  disabled={isDeleting}
                 >
-                  Delete
+                  {isDeleting ? "Deleting..." : "Delete"}
                 </Button>
               </div>
             </div>
