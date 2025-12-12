@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
 import { Card, CardContent } from '../../ui/card'
+import { Eye, EyeOff } from 'lucide-react'
 import loginImage from '../../../assets/loginImage.png'
 import authService from '../../../services/authService'
 import { activateClientAdmin, isClientAdminPending, clientAdminExists, isClientAdminActive, isClientAdminDeactivated, needsProfileSetup } from '../../../services/clientStatusService'
@@ -13,6 +14,7 @@ const Login = ({ onLogin }) => {
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -187,14 +189,23 @@ const Login = ({ onLogin }) => {
                     <label className="text-sm font-medium text-gray-700">
                       Password
                     </label>
-                    <Input
-                      type="password"
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="h-12 bg-white/70 border-gray-300 text-gray-800 placeholder:text-gray-500 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
-                    />
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="h-12 bg-white/70 border-gray-300 text-gray-800 placeholder:text-gray-500 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300 pr-12"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                      >
+                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                      </button>
+                    </div>
                   </div>
 
                   {/* <div className="flex items-center justify-between">
