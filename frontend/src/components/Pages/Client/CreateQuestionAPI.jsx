@@ -51,6 +51,7 @@ const CreateQuestionAPI = ({
   const [options, setOptions] = useState([""]);
   const [message, setMessage] = useState("");
   const [firebaseQuestions, setFirebaseQuestions] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Edit modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -171,9 +172,13 @@ const CreateQuestionAPI = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (isSubmitting) return; // Prevent double submission
+    setIsSubmitting(true);
 
     if (!questionText.trim() || !responseType) {
       setMessage("Please fill in all required fields");
+      setIsSubmitting(false);
       return;
     }
 
@@ -236,6 +241,8 @@ const CreateQuestionAPI = ({
       console.error("Create question error:", err);
       setMessage(err.message || "Failed to create question");
       setTimeout(() => setMessage(""), 5000);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -581,10 +588,10 @@ const CreateQuestionAPI = ({
 
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || isSubmitting}
                 className="w-full bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-600 hover:to-purple-700"
               >
-                Create Question
+                {isSubmitting ? "Creating..." : "Create Question"}
               </Button>
             </form>
           </div>
@@ -874,17 +881,17 @@ const CreateQuestionAPI = ({
 
             <div className="flex gap-2 pt-4">
               <Button
-                onClick={confirmDelete}
-                className="flex-1 bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-600 hover:to-purple-700"
-              >
-                Delete Question
-              </Button>
-              <Button
                 variant="outline"
                 onClick={cancelDelete}
                 className="flex-1"
               >
                 Cancel
+              </Button>
+              <Button
+                onClick={confirmDelete}
+                className="flex-1 bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-600 hover:to-purple-700"
+              >
+                Delete Question
               </Button>
             </div>
           </div>

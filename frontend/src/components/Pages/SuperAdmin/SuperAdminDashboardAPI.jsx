@@ -851,7 +851,7 @@ const SuperAdminDashboardAPI = () => {
                                     : "Inactive"}
                               </span>
                             </div>
-                            <p className="text-sm text-gray-600 mb-1">
+                            <p className="text-xs sm:text-sm text-gray-600 mb-1">
                               Email: {admin.email}
                             </p>
                             <p className="text-sm text-gray-600 mb-1">
@@ -863,7 +863,7 @@ const SuperAdminDashboardAPI = () => {
                             </p>
                           </div>
 
-                          <div className="flex gap-2 ml-4">
+                          <div className="flex flex-wrap gap-2 sm:gap-2 ml-6 sm:ml-4">
                             <Button
                               variant="outline"
                               size="sm"
@@ -872,8 +872,9 @@ const SuperAdminDashboardAPI = () => {
                                 e.stopPropagation()
                               }
                               title="Resend password setup email"
+                              className="p-1 sm:p-2"
                             >
-                              <Mail className="w-4 h-4" />
+                              <Mail className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
                             {admin.status === "active" && (
                               <Button
@@ -884,8 +885,9 @@ const SuperAdminDashboardAPI = () => {
                                   toggleClientStatus(admin.id, admin.isActive);
                                 }}
                                 title="Deactivate client"
+                                className="p-1 sm:p-2"
                               >
-                                <UserX className="w-4 h-4" />
+                                <UserX className="w-3 h-3 sm:w-4 sm:h-4" />
                               </Button>
                             )}
                             {admin.status === "inactive" && (
@@ -897,8 +899,9 @@ const SuperAdminDashboardAPI = () => {
                                   toggleClientStatus(admin.id, admin.isActive);
                                 }}
                                 title="Activate client"
+                                className="p-1 sm:p-2"
                               >
-                                <UserCheck className="w-4 h-4" />
+                                <UserCheck className="w-3 h-3 sm:w-4 sm:h-4" />
                               </Button>
                             )}
                             <Button
@@ -906,16 +909,18 @@ const SuperAdminDashboardAPI = () => {
                               size="sm"
                               onClick={(e) => openEditModal(e, admin)}
                               title="Edit client"
+                              className="p-1 sm:p-2"
                             >
-                              <Edit3 className="w-4 h-4" />
+                              <Edit3 className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={(e) => openDeleteModal(e, admin)}
                               title="Delete client"
+                              className="p-1 sm:p-2"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
                           </div>
                         </div>
@@ -945,6 +950,7 @@ const SuperAdminDashboardAPI = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <TopBar
+        activeTab={activeTab}
         setActiveTab={setActiveTab}
         onLogout={handleLogout}
         isSuperAdmin={true}

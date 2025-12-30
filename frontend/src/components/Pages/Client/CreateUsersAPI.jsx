@@ -634,7 +634,7 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
                                 : "Inactive"}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600 mb-1">
+                        <p className="text-xs sm:text-sm text-gray-600 mb-1">
                           Email: {user.email}
                         </p>
                         <p className="text-sm text-gray-500">
@@ -645,14 +645,15 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
                         </p>
                       </div>
 
-                      <div className="flex gap-2 ml-4">
+                      <div className="flex flex-wrap gap-2 sm:gap-2 ml-6 sm:ml-4">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => resendPasswordEmail(user.email)}
                           title="Resend password setup email"
+                          className="p-1 sm:p-2"
                         >
-                          <Mail className="w-4 h-4" />
+                          <Mail className="w-3 h-3 sm:w-4 sm:h-4" />
                         </Button>
                         {user.status === "pending" && (
                           <Button
@@ -660,8 +661,9 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
                             size="sm"
                             onClick={() => handleToggleStatus(user.id)}
                             title="Activate User"
+                            className="p-1 sm:p-2"
                           >
-                            <UserCheck className="w-4 h-4" />
+                            <UserCheck className="w-3 h-3 sm:w-4 sm:h-4" />
                           </Button>
                         )}
                         {user.status === "active" && (
@@ -670,8 +672,9 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
                             size="sm"
                             onClick={() => handleToggleStatus(user.id)}
                             title="Deactivate User"
+                            className="p-1 sm:p-2"
                           >
-                            <UserX className="w-4 h-4" />
+                            <UserX className="w-3 h-3 sm:w-4 sm:h-4" />
                           </Button>
                         )}
                         {user.status === "inactive" && (
@@ -680,8 +683,9 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
                             size="sm"
                             onClick={() => handleToggleStatus(user.id)}
                             title="Activate User"
+                            className="p-1 sm:p-2"
                           >
-                            <UserCheck className="w-4 h-4" />
+                            <UserCheck className="w-3 h-3 sm:w-4 sm:h-4" />
                           </Button>
                         )}
                         <Button
@@ -689,15 +693,17 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
                           size="sm"
                           onClick={() => openEditModal(user)}
                           title="Edit user"
+                          className="p-1 sm:p-2"
                         >
-                          <Edit3 className="w-4 h-4" />
+                          <Edit3 className="w-3 h-3 sm:w-4 sm:h-4" />
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => openDeleteModal(user)}
+                          className="p-1 sm:p-2"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                         </Button>
                       </div>
                     </div>

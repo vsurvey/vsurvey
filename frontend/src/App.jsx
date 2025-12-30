@@ -69,7 +69,7 @@ const stopClientStatusMonitoring = () => {
 
 function App() {
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState("personnel");
+  const [activeTab, setActiveTab] = useState("Users");
   const [session, setSession] = useState(() => {
     return localStorage.getItem("currentSuperAdmin") ||
       localStorage.getItem("currentClientAdmin") ||
@@ -98,6 +98,7 @@ function App() {
   const [isCheckingProfile, setIsCheckingProfile] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [showDeactivationMessage, setShowDeactivationMessage] = useState(false);
+  const [profileSetupComplete, setProfileSetupComplete] = useState(false);
 
   // Check if we're on a password setup page
   const isPasswordSetupPage = location.pathname === "/set-password";
@@ -111,7 +112,7 @@ function App() {
     }
     setSession(false);
     setUserType(null);
-    setActiveTab("personnel");
+    setActiveTab("Users");
     setClientAdminData(null);
     setShowProfileEdit(false);
     localStorage.removeItem("currentClientAdmin");
@@ -127,6 +128,9 @@ function App() {
     }));
     setProfileCache(profileData);
     setShowProfileEdit(false);
+    setProfileSetupComplete(true);
+    // Navigate to Users page after profile completion
+    setActiveTab("Users");
   };
 
   const handleProfileEdit = () => {
@@ -220,6 +224,12 @@ function App() {
               setClientAdminData((prev) => {
                 // Preserve existing profile if it exists and clientData is complete
                 const profileToUse = clientData;
+                const setupComplete = !needsSetup;
+                setProfileSetupComplete(setupComplete);
+                // Set active tab to Profile for first-time users
+                if (needsSetup) {
+                  setActiveTab("profile");
+                }
                 return {
                   email: user.email,
                   isFirstTime: needsSetup,
@@ -232,6 +242,8 @@ function App() {
                 isFirstTime: true,
                 profile: null,
               });
+              setProfileSetupComplete(false);
+              setActiveTab("profile");
             }
           } catch (error) {
             console.error("Error checking profile setup:", error);
@@ -240,6 +252,8 @@ function App() {
               isFirstTime: true,
               profile: null,
             });
+            setProfileSetupComplete(false);
+            setActiveTab("profile");
           } finally {
             setIsCheckingProfile(false);
           }
@@ -463,12 +477,14 @@ function App() {
               (clientAdminData.isFirstTime === true || showProfileEdit) ? (
               <>
                 <TopBar
+                  activeTab={activeTab}
                   setActiveTab={setActiveTab}
                   onLogout={handleLogout}
                   onProfileEdit={handleProfileEdit}
                   isMobileMenuOpen={isMobileMenuOpen}
                   setIsMobileMenuOpen={setIsMobileMenuOpen}
                   profile={profileCache || clientAdminData?.profile}
+                  profileSetupComplete={profileSetupComplete}
                 />
                 <Sidebar
                   activeTab={activeTab}
@@ -476,6 +492,7 @@ function App() {
                   onSidebarToggle={setSidebarOpen}
                   isMobileOpen={isMobileMenuOpen}
                   setIsMobileOpen={setIsMobileMenuOpen}
+                  profileSetupComplete={profileSetupComplete}
                 />
                 <main
                   className={`transition-all duration-300 pt-16 sm:pt-20 md:pt-24 p-4 sm:p-6 md:p-8 mt-10 ${
@@ -496,12 +513,14 @@ function App() {
             ) : (
               <>
                 <TopBar
+                  activeTab={activeTab}
                   setActiveTab={setActiveTab}
                   onLogout={handleLogout}
                   onProfileEdit={handleProfileEdit}
                   isMobileMenuOpen={isMobileMenuOpen}
                   setIsMobileMenuOpen={setIsMobileMenuOpen}
                   profile={profileCache || clientAdminData?.profile}
+                  profileSetupComplete={profileSetupComplete}
                 />
                 <Sidebar
                   activeTab={activeTab}
@@ -509,6 +528,7 @@ function App() {
                   onSidebarToggle={setSidebarOpen}
                   isMobileOpen={isMobileMenuOpen}
                   setIsMobileOpen={setIsMobileMenuOpen}
+                  profileSetupComplete={profileSetupComplete}
                 />
                 <main
                   className={`transition-all duration-300 pt-16 sm:pt-20 md:pt-24 p-4 sm:p-6 md:p-8 mt-10 ${

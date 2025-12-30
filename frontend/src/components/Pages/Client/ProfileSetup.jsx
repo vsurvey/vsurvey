@@ -78,6 +78,7 @@ const ProfileSetup = ({
     address: existingProfile?.address || "",
   });
   const [message, setMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -188,18 +189,27 @@ const ProfileSetup = ({
     await completeProfileSetup(email, profileData);
 
     if (isEdit) {
-      setMessage("Profile updated successfully!");
-      setTimeout(() => setMessage(""), 3000);
+      setSuccessMessage("You have updated your profile");
+    } else {
+      setSuccessMessage("You have completed your profile setup");
     }
 
-    onComplete(profileData);
-    if (!isEdit && setActiveTab) {
-      setActiveTab("Users");
-    }
+    setTimeout(() => {
+      setSuccessMessage("");
+      onComplete(profileData);
+      if (setActiveTab) {
+        setActiveTab("Users");
+      }
+    }, 2000);
   };
 
   return (
     <div className="max-w-md mx-auto">
+      {successMessage && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg z-50">
+          {successMessage}
+        </div>
+      )}
       {message && (
         <div className={`mb-4 p-3 rounded-md text-center ${
           message.includes("successfully") || message.includes("removed")

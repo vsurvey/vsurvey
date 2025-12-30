@@ -12,14 +12,24 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 
-const Sidebar = ({ activeTab, setActiveTab, onSidebarToggle, isMobileOpen, setIsMobileOpen }) => {
+const Sidebar = ({ activeTab, setActiveTab, onSidebarToggle, isMobileOpen, setIsMobileOpen, profileSetupComplete = true }) => {
   const [isOpen, setIsOpen] = useState(false)
+  const [showPopup, setShowPopup] = useState(false)
 
   useEffect(() => {
     if (onSidebarToggle) {
       onSidebarToggle(isOpen)
     }
   }, [isOpen, onSidebarToggle])
+
+  const handleTabClick = (tabId) => {
+    if (!profileSetupComplete && tabId !== "profile") {
+      setShowPopup(true)
+      setTimeout(() => setShowPopup(false), 2000)
+      return
+    }
+    setActiveTab(tabId)
+  }
 
   const menuItems = [
     { 
@@ -104,7 +114,7 @@ const Sidebar = ({ activeTab, setActiveTab, onSidebarToggle, isMobileOpen, setIs
                   {menuItems.map((item) => (
                     <SidebarMenuItem key={item.id}>
                       <SidebarMenuButton
-                        onClick={() => setActiveTab(item.id)}
+                        onClick={() => handleTabClick(item.id)}
                         isActive={activeTab === item.id}
                         className={`w-full justify-start px-3 py-2 ${
                           activeTab === item.id ? 'bg-gray-100 border-r-2 border-black text-black font-medium' : 'text-gray-700'
@@ -132,6 +142,13 @@ const Sidebar = ({ activeTab, setActiveTab, onSidebarToggle, isMobileOpen, setIs
 
 
       </SidebarProvider>
+      
+      {/* Popup Message */}
+      {showPopup && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg z-50">
+          Please complete your profile setup first
+        </div>
+      )}
     </>
   )
 }
