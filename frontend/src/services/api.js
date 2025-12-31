@@ -1,5 +1,5 @@
-import { auth } from '../firebase';
-import { API_CONFIG } from '../config/apiConfig';
+import { auth } from "../firebase";
+import { API_CONFIG } from "../config/apiConfig";
 
 const API_BASE_URL = API_CONFIG.BASE_URL;
 
@@ -11,12 +11,11 @@ class ApiService {
   async getAuthToken() {
     // Skip during user creation to avoid auth conflicts
     if (window.isCreatingUser) {
-      console.log('DEBUG: Skipping getAuthToken during user creation');
       return null;
     }
 
     // Wait for auth state to be ready
-    await new Promise(resolve => {
+    await new Promise((resolve) => {
       if (auth.currentUser) {
         resolve();
         return;
@@ -36,55 +35,56 @@ class ApiService {
     if (user) {
       try {
         const token = await user.getIdToken(true);
-        localStorage.setItem('firebaseToken', token);
+        localStorage.setItem("firebaseToken", token);
         return token;
       } catch (error) {
-        localStorage.removeItem('firebaseToken');
+        localStorage.removeItem("firebaseToken");
         return null;
       }
     }
-    
-    localStorage.removeItem('firebaseToken');
+
+    localStorage.removeItem("firebaseToken");
     return null;
   }
 
   async request(endpoint, options = {}) {
     // Skip all API requests during user creation
     if (window.isCreatingUser) {
-      console.log('DEBUG: Skipping API request during user creation');
       return { items: [], total: 0, page: 1, size: 10, pages: 0 };
     }
-    
+
     const token = await this.getAuthToken();
-    
+
     if (!token) {
       return { items: [], total: 0, page: 1, size: 10, pages: 0 };
     }
-    
+
     const config = {
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
         ...options.headers,
       },
       ...options,
     };
 
-    if (config.body && typeof config.body === 'object') {
+    if (config.body && typeof config.body === "object") {
       config.body = JSON.stringify(config.body);
     }
 
     try {
       const response = await fetch(`${this.baseURL}${endpoint}`, config);
-      
+
       if (response.status === 401) {
-        localStorage.removeItem('firebaseToken');
+        localStorage.removeItem("firebaseToken");
         return { items: [], total: 0, page: 1, size: 10, pages: 0 };
       }
-      
+
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'Network error' }));
-        throw new Error(error.detail || error.message || 'Request failed');
+        const error = await response
+          .json()
+          .catch(() => ({ message: "Network error" }));
+        throw new Error(error.detail || error.message || "Request failed");
       }
 
       return await response.json();
@@ -96,8 +96,8 @@ class ApiService {
 
   // User endpoints
   async createUser(userData) {
-    return this.request('/users/', {
-      method: 'POST',
+    return this.request("/users/", {
+      method: "POST",
       body: userData,
     });
   }
@@ -113,27 +113,27 @@ class ApiService {
 
   async updateUser(userId, userData) {
     return this.request(`/users/${userId}`, {
-      method: 'PUT',
+      method: "PUT",
       body: userData,
     });
   }
 
   async deleteUser(userId) {
     return this.request(`/users/${userId}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
   async toggleUserStatus(userId) {
     return this.request(`/users/${userId}/toggle-status`, {
-      method: 'PATCH',
+      method: "PATCH",
     });
   }
 
   // Question endpoints
   async createQuestion(questionData) {
-    return this.request('/questions/', {
-      method: 'POST',
+    return this.request("/questions/", {
+      method: "POST",
       body: questionData,
     });
   }
@@ -149,25 +149,25 @@ class ApiService {
 
   async updateQuestion(questionId, questionData) {
     return this.request(`/questions/${questionId}`, {
-      method: 'PUT',
+      method: "PUT",
       body: questionData,
     });
   }
 
   async deleteQuestion(questionId) {
     return this.request(`/questions/${questionId}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
   async getQuestionTypes() {
-    return this.request('/questions/types/');
+    return this.request("/questions/types/");
   }
 
   // Survey endpoints
   async createSurvey(surveyData) {
-    return this.request('/surveys/', {
-      method: 'POST',
+    return this.request("/surveys/", {
+      method: "POST",
       body: surveyData,
     });
   }
@@ -178,44 +178,49 @@ class ApiService {
   }
 
   async getSurveyById(surveyId, includeQuestions = false) {
-    return this.request(`/surveys/${surveyId}?include_questions=${includeQuestions}`);
+    return this.request(
+      `/surveys/${surveyId}?include_questions=${includeQuestions}`
+    );
   }
 
   async updateSurvey(surveyId, surveyData) {
     return this.request(`/surveys/${surveyId}`, {
-      method: 'PUT',
+      method: "PUT",
       body: surveyData,
     });
   }
 
   async deleteSurvey(surveyId) {
     return this.request(`/surveys/${surveyId}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
   async addQuestionToSurvey(surveyId, questionId, order = 0) {
-    return this.request(`/surveys/${surveyId}/questions/${questionId}?order=${order}`, {
-      method: 'POST',
-    });
+    return this.request(
+      `/surveys/${surveyId}/questions/${questionId}?order=${order}`,
+      {
+        method: "POST",
+      }
+    );
   }
 
   async removeQuestionFromSurvey(surveyId, questionId) {
     return this.request(`/surveys/${surveyId}/questions/${questionId}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
   async updateSurveyStatus(surveyId, status) {
     return this.request(`/surveys/${surveyId}/status?status=${status}`, {
-      method: 'PATCH',
+      method: "PATCH",
     });
   }
 
   // Assignment endpoints
   async assignSurveyToUsers(assignmentData) {
-    return this.request('/assignments/', {
-      method: 'POST',
+    return this.request("/assignments/", {
+      method: "POST",
       body: assignmentData,
     });
   }
@@ -235,20 +240,20 @@ class ApiService {
 
   async updateAssignment(assignmentId, assignmentData) {
     return this.request(`/assignments/${assignmentId}`, {
-      method: 'PUT',
+      method: "PUT",
       body: assignmentData,
     });
   }
 
   async deleteAssignment(assignmentId) {
     return this.request(`/assignments/${assignmentId}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
   async removeUserFromSurvey(surveyId, userId) {
     return this.request(`/assignments/survey/${surveyId}/user/${userId}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 }

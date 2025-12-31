@@ -29,27 +29,23 @@ const startClientStatusMonitoring = (email, onLogout) => {
   if (statusListener) {
     statusListener();
   }
-  const superadminId = "1nXphRXcXR4h99bneWyw";
+  const superadminId = "hdXje7ZvCbj7eOugVLiZ";
   const clientsRef = collection(db, "superadmin", superadminId, "clients");
   const q = query(clientsRef, where("email", "==", email));
 
   statusListener = onSnapshot(
     q,
     (snapshot) => {
-      console.log("Client status check for:", email);
       if (snapshot.empty) {
         // Client document no longer exists - client was deleted
-        console.log("Client deleted, logging out:", email);
         auth.signOut();
         onLogout();
       } else {
         const clientData = snapshot.docs[0].data();
-        console.log("Client data:", clientData);
 
         // Check if client is deactivated (isActive: false)
         // Don't auto-logout pending clients (new clients setting up profile)
         if (clientData.isActive === false && clientData.status !== "pending") {
-          console.log("Client deactivated, logging out:", email);
           auth.signOut();
           onLogout();
         }
@@ -70,7 +66,7 @@ const stopClientStatusMonitoring = () => {
 
 function App() {
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState("personnel");
+  const [activeTab, setActiveTab] = useState("Users");
   const [session, setSession] = useState(() => {
     return localStorage.getItem("currentSuperAdmin") ||
       localStorage.getItem("currentClientAdmin") ||
@@ -99,6 +95,7 @@ function App() {
   const [isCheckingProfile, setIsCheckingProfile] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [showDeactivationMessage, setShowDeactivationMessage] = useState(false);
+  const [profileSetupComplete, setProfileSetupComplete] = useState(false);
 
   // Check if we're on a password setup page
   const isPasswordSetupPage = location.pathname === "/set-password";
@@ -112,7 +109,7 @@ function App() {
     }
     setSession(false);
     setUserType(null);
-    setActiveTab("personnel");
+    setActiveTab("Users");
     setClientAdminData(null);
     setShowProfileEdit(false);
     localStorage.removeItem("currentClientAdmin");
@@ -128,6 +125,9 @@ function App() {
     }));
     setProfileCache(profileData);
     setShowProfileEdit(false);
+    setProfileSetupComplete(true);
+    // Navigate to Users page after profile completion
+    setActiveTab("Users");
   };
 
   const handleProfileEdit = () => {
@@ -168,11 +168,8 @@ function App() {
     // Listen for Firebase auth state changes
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        console.log("Auth state changed:", user.email);
-
         // Check if it's superadmin by email
         if (user.email === "superadmin@vsurvey.com") {
-          console.log("SuperAdmin detected, staying on SuperAdmin dashboard");
           localStorage.setItem(
             "currentSuperAdmin",
             JSON.stringify({ email: user.email })
@@ -184,22 +181,13 @@ function App() {
 
         // Skip navigation if we're in the middle of creating a user
         if (window.isCreatingUser) {
-          console.log(
-            "User creation in progress, skipping navigation and activation"
-          );
           return;
         }
 
         // Skip activation for newly created users - they should remain pending
         if (window.justCreatedUser === user.email) {
-          console.log(
-            "Newly created user detected, skipping auto-activation:",
-            user.email
-          );
           return;
         }
-
-        console.log("Client user detected, checking profile setup");
         // Start monitoring client status for auto-logout
         startClientStatusMonitoring(user.email, () => {
           setShowDeactivationMessage(true);
@@ -210,7 +198,7 @@ function App() {
         const checkProfileSetup = async () => {
           setIsCheckingProfile(true);
           try {
-            const superadminId = "1nXphRXcXR4h99bneWyw";
+            const superadminId = "hdXje7ZvCbj7eOugVLiZ";
             const clientsRef = collection(
               db,
               "superadmin",
@@ -225,16 +213,17 @@ function App() {
               // is_first_time: false = needs setup, true = setup complete, undefined = needs setup
               const needsSetup = clientData.is_first_time !== true;
 
-              console.log("Profile setup check:", {
-                is_first_time: clientData.is_first_time,
-                needsSetup,
-              });
-              console.log("Client data from Firebase:", clientData);
               // Cache the profile data
               setProfileCache(clientData);
               setClientAdminData((prev) => {
                 // Preserve existing profile if it exists and clientData is complete
                 const profileToUse = clientData;
+                const setupComplete = !needsSetup;
+                setProfileSetupComplete(setupComplete);
+                // Set active tab to Profile for first-time users
+                if (needsSetup) {
+                  setActiveTab("profile");
+                }
                 return {
                   email: user.email,
                   isFirstTime: needsSetup,
@@ -247,6 +236,8 @@ function App() {
                 isFirstTime: true,
                 profile: null,
               });
+              setProfileSetupComplete(false);
+              setActiveTab("profile");
             }
           } catch (error) {
             console.error("Error checking profile setup:", error);
@@ -255,6 +246,8 @@ function App() {
               isFirstTime: true,
               profile: null,
             });
+            setProfileSetupComplete(false);
+            setActiveTab("profile");
           } finally {
             setIsCheckingProfile(false);
           }
@@ -320,6 +313,18 @@ function App() {
             profile={profileData}
             onProfileEdit={handleProfileEdit}
             onLogout={handleLogout}
+          />
+        );
+      case "profile":
+        return (
+          <ProfileSetup
+            email={clientAdminData.email}
+            onComplete={handleProfileComplete}
+            isEdit={true}
+            existingProfile={clientAdminData?.profile}
+            setActiveTab={setActiveTab}
+            onLogout={handleLogout}
+            onProfileEdit={handleProfileEdit}
           />
         );
       default:
@@ -464,22 +469,16 @@ function App() {
               </div>
             ) : clientAdminData &&
               (clientAdminData.isFirstTime === true || showProfileEdit) ? (
-              <ProfileSetup
-                email={clientAdminData.email}
-                onComplete={handleProfileComplete}
-                isEdit={showProfileEdit}
-                existingProfile={clientAdminData?.profile}
-                setActiveTab={setActiveTab}
-              />
-            ) : (
               <>
                 <TopBar
+                  activeTab={activeTab}
                   setActiveTab={setActiveTab}
                   onLogout={handleLogout}
                   onProfileEdit={handleProfileEdit}
                   isMobileMenuOpen={isMobileMenuOpen}
                   setIsMobileMenuOpen={setIsMobileMenuOpen}
                   profile={profileCache || clientAdminData?.profile}
+                  profileSetupComplete={profileSetupComplete}
                 />
                 <Sidebar
                   activeTab={activeTab}
@@ -487,6 +486,43 @@ function App() {
                   onSidebarToggle={setSidebarOpen}
                   isMobileOpen={isMobileMenuOpen}
                   setIsMobileOpen={setIsMobileMenuOpen}
+                  profileSetupComplete={profileSetupComplete}
+                />
+                <main
+                  className={`transition-all duration-300 pt-16 sm:pt-20 md:pt-24 p-4 sm:p-6 md:p-8 mt-10 ${
+                    sidebarOpen ? "xl:ml-64" : "xl:ml-16"
+                  }`}
+                >
+                  <ProfileSetup
+                    email={clientAdminData.email}
+                    onComplete={handleProfileComplete}
+                    isEdit={showProfileEdit}
+                    existingProfile={clientAdminData?.profile}
+                    setActiveTab={setActiveTab}
+                    onLogout={handleLogout}
+                    onProfileEdit={handleProfileEdit}
+                  />
+                </main>
+              </>
+            ) : (
+              <>
+                <TopBar
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  onLogout={handleLogout}
+                  onProfileEdit={handleProfileEdit}
+                  isMobileMenuOpen={isMobileMenuOpen}
+                  setIsMobileMenuOpen={setIsMobileMenuOpen}
+                  profile={profileCache || clientAdminData?.profile}
+                  profileSetupComplete={profileSetupComplete}
+                />
+                <Sidebar
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  onSidebarToggle={setSidebarOpen}
+                  isMobileOpen={isMobileMenuOpen}
+                  setIsMobileOpen={setIsMobileMenuOpen}
+                  profileSetupComplete={profileSetupComplete}
                 />
                 <main
                   className={`transition-all duration-300 pt-16 sm:pt-20 md:pt-24 p-4 sm:p-6 md:p-8 mt-10 ${

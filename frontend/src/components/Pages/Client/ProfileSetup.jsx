@@ -6,6 +6,12 @@ import { User, Upload } from "@/components/ui/icons";
 import { completeProfileSetup } from "../../../services/clientStatusService";
 import { db } from "../../../firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  compressAndUploadImage,
+  generateImagePath,
+} from "../../../utils/imageUtils";
+import TopBar from "../TapBar/TopBar";
+import Sidebar from "../SideBar/Sidebar";
 
 const countryCodes = [
   { code: "+1", flag: "🇺🇸", name: "United States" },
@@ -57,10 +63,15 @@ const ProfileSetup = ({
   isEdit = false,
   existingProfile = null,
   setActiveTab,
+  onLogout,
+  onProfileEdit,
 }) => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [originalData, setOriginalData] = useState(null);
   const [formData, setFormData] = useState({
-    profileImage: existingProfile?.profileImage || null,
+    profileImage:
+      existingProfile?.profile_photo || existingProfile?.profileImage || null,
     name: existingProfile?.name || "",
     email: email,
     company_name: existingProfile?.company_name || "",
@@ -71,8 +82,10 @@ const ProfileSetup = ({
     address: existingProfile?.address || "",
   });
   const [message, setMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileInputRef = useRef(null);
 
   const filteredCountries = countryCodes
@@ -93,7 +106,7 @@ const ProfileSetup = ({
   useEffect(() => {
     const fetchClientData = async () => {
       try {
-        const superadminId = "1nXphRXcXR4h99bneWyw";
+        const superadminId = "hdXje7ZvCbj7eOugVLiZ";
         const clientsRef = collection(
           db,
           "superadmin",
@@ -107,7 +120,11 @@ const ProfileSetup = ({
           const clientData = snapshot.docs[0].data();
           const firebaseData = {
             profileImage:
-              clientData.profileImage || existingProfile?.profileImage || null,
+              clientData.profile_photo ||
+              clientData.profileImage ||
+              existingProfile?.profile_photo ||
+              existingProfile?.profileImage ||
+              null,
             name: clientData.name || existingProfile?.name || "",
             email: email,
             company_name:
@@ -131,15 +148,24 @@ const ProfileSetup = ({
     fetchClientData();
   }, [email]);
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setFormData({ ...formData, profileImage: e.target.result });
-      };
-      reader.readAsDataURL(file);
+      try {
+        setUploadingPhoto(true);
+        const compressedImageUrl = await compressAndUploadImage(file);
+        setFormData({ ...formData, profileImage: compressedImageUrl });
+      } catch (error) {
+        console.error("Error uploading profile photo:", error);
+        setMessage("Failed to upload profile photo. Please try again.");
+      } finally {
+        setUploadingPhoto(false);
+      }
     }
+  };
+
+  const handleRemoveImage = () => {
+    setFormData({ ...formData, profileImage: null });
   };
 
   const handleSubmit = async (e) => {
@@ -170,15 +196,40 @@ const ProfileSetup = ({
 
     await completeProfileSetup(email, profileData);
 
-    if (!isEdit && setActiveTab) {
-      setActiveTab("Users");
+    if (isEdit) {
+      setSuccessMessage("You have updated your profile");
+    } else {
+      setSuccessMessage("You have completed your profile setup");
     }
-    onComplete(profileData);
+
+    setTimeout(() => {
+      setSuccessMessage("");
+      onComplete(profileData);
+      if (setActiveTab) {
+        setActiveTab("Users");
+      }
+    }, 2000);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md">
+    <div className="max-w-md mx-auto">
+      {successMessage && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg z-50">
+          {successMessage}
+        </div>
+      )}
+      {message && (
+        <div
+          className={`mb-4 p-3 rounded-md text-center ${
+            message.includes("successfully") || message.includes("removed")
+              ? "bg-green-50 text-green-700 border border-green-200"
+              : "bg-red-50 text-red-700 border border-red-200"
+          }`}
+        >
+          {message}
+        </div>
+      )}
+      <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-center">
             {isEdit ? "Edit Profile" : "Complete Your Profile"}
@@ -202,15 +253,40 @@ const ProfileSetup = ({
                     <User className="w-10 h-10 text-gray-400" />
                   )}
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-sm"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Image
-                </Button>
+                {!formData.profileImage ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                    className="text-sm"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {uploadingPhoto ? "Uploading..." : "Upload Image"}
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingPhoto}
+                      className="text-sm"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {uploadingPhoto ? "Uploading..." : "Change Image"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleRemoveImage}
+                      className="text-sm text-red-600 hover:text-red-700"
+                    >
+                      Remove Profile
+                    </Button>
+                  </div>
+                )}
+
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -396,28 +472,34 @@ const ProfileSetup = ({
               <div className="flex gap-3">
                 <Button
                   type="button"
-                  onClick={() => onComplete(originalData || existingProfile)}
+                  onClick={() => {
+                    onComplete(originalData || existingProfile);
+                    if (setActiveTab) {
+                      setActiveTab("Users");
+                    }
+                  }}
                   className="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-4 text-sm"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
+                  disabled={uploadingPhoto}
                   className="flex-1 bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-600 hover:to-purple-700 p-4 text-sm"
                 >
-                  Update Profile
+                  {uploadingPhoto ? "Uploading..." : "Update Profile"}
                 </Button>
               </div>
             ) : (
               <Button
                 type="submit"
+                disabled={uploadingPhoto}
                 className="w-full bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-600 hover:to-purple-700 p-4 text-sm"
               >
-                Complete Setup
+                {uploadingPhoto ? "Uploading..." : "Complete Setup"}
               </Button>
             )}
           </form>
-          {message && <p className="mt-4 text-sm text-red-600">{message}</p>}
         </CardContent>
       </Card>
     </div>

@@ -78,25 +78,17 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
   // Function to get client ID using client email
   const getClientData = async (clientEmail) => {
     try {
-      console.log("Searching for client with email:", clientEmail);
-      const superadminId = "1nXphRXcXR4h99bneWyw";
+      const superadminId = "hdXje7ZvCbj7eOugVLiZ";
       const clientsRef = collection(db, "superadmin", superadminId, "clients");
       const q = query(clientsRef, where("email", "==", clientEmail));
       const clientsSnapshot = await getDocs(q);
-      console.log("Found clients:", clientsSnapshot.docs.length);
 
       if (!clientsSnapshot.empty) {
         const clientDoc = clientsSnapshot.docs[0];
-        console.log(
-          "Match found! Client ID:",
-          clientDoc.id,
-          "Superadmin ID:",
-          superadminId
-        );
+
         return { clientId: clientDoc.id, superadminId: superadminId };
       }
 
-      console.log("No matching client found");
       return { clientId: null, superadminId: null };
     } catch (error) {
       console.error("Error getting client data:", error);
@@ -110,18 +102,12 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
         // Wait for auth to be ready
         const currentUser = auth.currentUser;
         if (!currentUser?.email) {
-          console.log("Auth not ready, retrying in 1 second...");
           setTimeout(initializeClientData, 1000);
           return;
         }
 
-        console.log("Getting client data for user:", currentUser.email);
         const { clientId: id, superadminId: superAdminId } =
           await getClientData(currentUser.email);
-        console.log("Retrieved client data:", {
-          clientId: id,
-          superadminId: superAdminId,
-        });
 
         if (!id) {
           console.warn(
@@ -151,22 +137,15 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
           return;
         }
 
-        console.log("Setting up user listener for:", currentUser.email);
-
         const usersRef = collection(db, "users");
         const q = query(usersRef, where("created_by", "==", currentUser.email));
 
         const unsubscribe = onSnapshot(
           q,
           (snapshot) => {
-            console.log(
-              "Users snapshot received, count:",
-              snapshot.docs.length
-            );
             const usersData = snapshot.docs
               .map((doc) => {
                 const data = { id: doc.id, ...doc.data() };
-                console.log("User data:", data);
                 return data;
               })
               .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort in JavaScript
@@ -200,14 +179,6 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
     };
   }, []); // Remove clientId dependency
 
-  console.log("Using clientId:", clientId);
-  console.log("Profile:", profile);
-  console.log(
-    "Database path will be: superadmin/1nXphRXcXR4h99bneWyw/clients/" +
-      clientId +
-      "/users"
-  );
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -226,7 +197,6 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
       const clientEmail = currentUser.email;
 
       // First create Firebase user to get the UID
-      console.log("Creating Firebase user for:", formData.email.trim());
       const tempPassword = `Temp${Date.now()}!`;
       const userCredential = await createUserWithEmailAndPassword(
         secondaryAuth,
@@ -234,24 +204,13 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
         tempPassword
       );
       const firebaseUID = userCredential.user.uid;
-      console.log("Firebase user created with UID:", firebaseUID);
 
       // Send password reset email
       await sendPasswordResetEmail(secondaryAuth, formData.email.trim());
-      console.log("Password reset email sent");
 
       // Get fresh client data at time of user creation
-      console.log("Getting fresh client data for user creation...");
       const { clientId: currentClientId, superadminId: currentSuperadminId } =
         await getClientData(clientEmail);
-      console.log("Fresh client data:", {
-        clientId: currentClientId,
-        superadminId: currentSuperadminId,
-      });
-      console.log("User data will include:", {
-        client_id: currentClientId,
-        superadmin_id: currentSuperadminId,
-      });
 
       // Create user document with Firebase UID as document ID
       const userData = {
@@ -274,25 +233,23 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
         superadmin_id: currentSuperadminId,
       };
 
-      console.log(
-        "Creating user document with Firebase UID as document ID:",
-        firebaseUID
-      );
       const userDocRef = doc(db, "users", firebaseUID);
       await setDoc(userDocRef, userData);
-
-      console.log(
-        "✅ User successfully added to /users collection with Firebase UID as document ID"
-      );
 
       setFormData({ full_name: "", email: "" });
       setMessage(
         `✅ User created successfully! Password setup email sent to ${formData.email.trim()}`
       );
+      setError(null);
       setTimeout(() => setMessage(""), 8000);
     } catch (err) {
-      setMessage(`❌ Failed to create user: ${err.message}`);
-      setTimeout(() => setMessage(""), 8000);
+      const errorMsg = err.message
+        .replace(/Firebase: Error \(auth\//gi, "")
+        .replace(/\)/g, "")
+        .replace(/Firebase:/gi, "")
+        .trim();
+      setError(`❌ Failed to create user: ${errorMsg}`);
+      setTimeout(() => setError(null), 8000);
     } finally {
       setLoading(false);
     }
@@ -340,10 +297,10 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
     if (userToDelete) {
       try {
         setLoading(true);
-        
+
         // Store current user to protect it
         const currentUser = auth.currentUser;
-        
+
         // Verify we're not deleting the current user
         if (currentUser && currentUser.uid === userToDelete.id) {
           setMessage("❌ Cannot delete currently logged-in user!");
@@ -365,17 +322,14 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
               },
             }
           );
-          
+
           if (response.ok) {
             const result = await response.json();
             if (result.success) {
               authDeleted = true;
-              console.log("User deleted from Firebase Auth via backend");
             }
           }
-        } catch (backendError) {
-          console.log("Backend deletion failed, trying client-side...");
-        }
+        } catch (backendError) {}
 
         // Delete from Firestore (always do this)
         try {
@@ -384,19 +338,14 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
             const userRef = doc(db, "users", userToDelete.id);
             await deleteDoc(userRef);
             firestoreDeleted = true;
-            console.log(`User ${userToDelete.id} deleted from Firestore`);
           }
         } catch (firestoreError) {
           console.error("Firestore deletion failed:", firestoreError);
         }
 
         // Show appropriate message
-        if (authDeleted && firestoreDeleted) {
-          setMessage("✅ User deleted from both Authentication and Database!");
-        } else if (firestoreDeleted) {
-          setMessage(
-            "✅ User deleted from Database. Authentication deletion may have failed."
-          );
+        if (firestoreDeleted) {
+          setMessage("✅ User deleted successfully!");
         } else {
           setMessage("❌ Failed to delete user.");
         }
@@ -457,25 +406,20 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
 
   const createFirebaseUser = async (email) => {
     try {
-      console.log("Creating Firebase user for:", email);
       const tempPassword = `Temp${Date.now()}!`;
       const userCredential = await createUserWithEmailAndPassword(
         secondaryAuth,
         email,
         tempPassword
       );
-      console.log("Firebase user created:", userCredential.user.uid);
 
       await sendPasswordResetEmail(secondaryAuth, email);
-      console.log("Password reset email sent");
 
-      setMessage(
-        `✅ Firebase user created and password setup email sent to ${email}`
-      );
+      setMessage(`✅ User created and password setup email sent to ${email}`);
       setTimeout(() => setMessage(""), 8000);
     } catch (error) {
-      console.error("Error creating Firebase user:", error);
-      if (error.code === "auth/email-already-in-use") {
+      console.error("Error creating user:", error);
+      if (error.code === "email-already-in-use") {
         await resendPasswordEmail(email);
       } else {
         setMessage(`❌ Failed to create user: ${error.message}`);
@@ -486,18 +430,16 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
 
   const resendPasswordEmail = async (email) => {
     try {
-      console.log("Attempting to send password reset email to:", email);
       await sendPasswordResetEmail(secondaryAuth, email);
-      console.log("Password reset email sent successfully");
       setMessage(`✅ Password setup email sent to ${email}`);
       setTimeout(() => setMessage(""), 5000);
     } catch (error) {
       console.error("Error sending password reset email:", error);
-      if (error.code === "auth/user-not-found") {
+      if (error.code === "user-not-found") {
         setMessage(
           `❌ User ${email} not found in Firebase Auth. Please create the user first.`
         );
-      } else if (error.code === "auth/invalid-email") {
+      } else if (error.code === "invalid-email") {
         setMessage(`❌ Invalid email address: ${email}`);
       } else {
         setMessage(`❌ Failed to send email: ${error.message}`);
@@ -514,6 +456,71 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
           <p className="text-gray-600 mt-2">
             Create and manage survey participants
           </p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Users
+                  </p>
+                  <p className="text-2xl font-bold">{users.length}</p>
+                </div>
+                <Users className="w-8 h-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Active Users
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {users.filter((u) => u.status === "active").length}
+                  </p>
+                </div>
+                <UserCheck className="w-8 h-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Pending Users
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {users.filter((u) => u.status === "pending").length}
+                  </p>
+                </div>
+                <Mail className="w-8 h-8 text-yellow-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Inactive Users
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {users.filter((u) => u.status === "inactive").length}
+                  </p>
+                </div>
+                <UserX className="w-8 h-8 text-red-500" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {(message || error) && (
@@ -624,7 +631,7 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
                                 : "Inactive"}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600 mb-1">
+                        <p className="text-xs sm:text-sm text-gray-600 mb-1">
                           Email: {user.email}
                         </p>
                         <p className="text-sm text-gray-500">
@@ -635,14 +642,15 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
                         </p>
                       </div>
 
-                      <div className="flex gap-2 ml-4">
+                      <div className="flex flex-wrap gap-2 sm:gap-2 ml-6 sm:ml-4">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => resendPasswordEmail(user.email)}
                           title="Resend password setup email"
+                          className="p-1 sm:p-2"
                         >
-                          <Mail className="w-4 h-4" />
+                          <Mail className="w-3 h-3 sm:w-4 sm:h-4" />
                         </Button>
                         {user.status === "pending" && (
                           <Button
@@ -650,8 +658,9 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
                             size="sm"
                             onClick={() => handleToggleStatus(user.id)}
                             title="Activate User"
+                            className="p-1 sm:p-2"
                           >
-                            <UserCheck className="w-4 h-4" />
+                            <UserCheck className="w-3 h-3 sm:w-4 sm:h-4" />
                           </Button>
                         )}
                         {user.status === "active" && (
@@ -660,8 +669,9 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
                             size="sm"
                             onClick={() => handleToggleStatus(user.id)}
                             title="Deactivate User"
+                            className="p-1 sm:p-2"
                           >
-                            <UserX className="w-4 h-4" />
+                            <UserX className="w-3 h-3 sm:w-4 sm:h-4" />
                           </Button>
                         )}
                         {user.status === "inactive" && (
@@ -670,8 +680,9 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
                             size="sm"
                             onClick={() => handleToggleStatus(user.id)}
                             title="Activate User"
+                            className="p-1 sm:p-2"
                           >
-                            <UserCheck className="w-4 h-4" />
+                            <UserCheck className="w-3 h-3 sm:w-4 sm:h-4" />
                           </Button>
                         )}
                         <Button
@@ -679,15 +690,17 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
                           size="sm"
                           onClick={() => openEditModal(user)}
                           title="Edit user"
+                          className="p-1 sm:p-2"
                         >
-                          <Edit3 className="w-4 h-4" />
+                          <Edit3 className="w-3 h-3 sm:w-4 sm:h-4" />
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => openDeleteModal(user)}
+                          className="p-1 sm:p-2"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                         </Button>
                       </div>
                     </div>
@@ -702,71 +715,6 @@ const CreateUsersAPI = ({ profile, onProfileEdit, onLogout }) => {
                       No users found
                     </p>
                   )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Total Users
-                  </p>
-                  <p className="text-2xl font-bold">{users.length}</p>
-                </div>
-                <Users className="w-8 h-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Active Users
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {users.filter((u) => u.status === "active").length}
-                  </p>
-                </div>
-                <UserCheck className="w-8 h-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Pending Users
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {users.filter((u) => u.status === "pending").length}
-                  </p>
-                </div>
-                <Mail className="w-8 h-8 text-yellow-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Inactive Users
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {users.filter((u) => u.status === "inactive").length}
-                  </p>
-                </div>
-                <UserX className="w-8 h-8 text-red-500" />
               </div>
             </CardContent>
           </Card>

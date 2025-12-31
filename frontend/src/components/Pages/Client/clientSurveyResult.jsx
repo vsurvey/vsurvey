@@ -73,7 +73,7 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
       const clientsRef = collection(
         db,
         "superadmin",
-        "1nXphRXcXR4h99bneWyw",
+        "hdXje7ZvCbj7eOugVLiZ",
         "clients"
       );
       const snapshot = await getDocs(clientsRef);
@@ -115,7 +115,7 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
       const surveysRef = collection(
         db,
         "superadmin",
-        "1nXphRXcXR4h99bneWyw",
+        "hdXje7ZvCbj7eOugVLiZ",
         "clients",
         clientId,
         "surveys"
@@ -150,7 +150,7 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
     const responsesRef = collection(
       db,
       "superadmin",
-      "1nXphRXcXR4h99bneWyw",
+      "hdXje7ZvCbj7eOugVLiZ",
       "clients",
       clientId,
       "surveys",
@@ -166,7 +166,7 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
         const surveyResponsesRef = collection(
           db,
           "superadmin",
-          "1nXphRXcXR4h99bneWyw",
+          "hdXje7ZvCbj7eOugVLiZ",
           "clients",
           clientId,
           "surveys",
@@ -191,7 +191,7 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
       const surveysRef = collection(
         db,
         "superadmin",
-        "1nXphRXcXR4h99bneWyw",
+        "hdXje7ZvCbj7eOugVLiZ",
         "clients",
         clientId,
         "surveys"
@@ -219,7 +219,7 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
       const responsesRef = collection(
         db,
         "superadmin",
-        "1nXphRXcXR4h99bneWyw",
+        "hdXje7ZvCbj7eOugVLiZ",
         "clients",
         clientId,
         "surveys",
@@ -246,7 +246,7 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
           const questionRef = doc(
             db,
             "superadmin",
-            "1nXphRXcXR4h99bneWyw",
+            "hdXje7ZvCbj7eOugVLiZ",
             "clients",
             clientId,
             "questions",
@@ -512,7 +512,7 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
                           <h3 className="text-xl font-semibold text-gray-900">
                             {survey.name}
                           </h3>
-                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                          <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-600">
                             <span>Responses: {responses.length}</span>
                             <span>•</span>
                             <div className="flex items-center gap-1">
@@ -527,7 +527,7 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
 
                           {/* Filters */}
                           {isExpanded && allResponses.length > 0 && (
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
                               {[
                                 "area",
                                 "boothNumber",
@@ -621,7 +621,6 @@ const SurveyResults = ({ profile, onProfileEdit, onLogout }) => {
                           variant="outline"
                           className="flex items-center gap-2"
                         >
-                          View Responses
                           {isExpanded ? (
                             <ChevronUp className="w-4 h-4" />
                           ) : (

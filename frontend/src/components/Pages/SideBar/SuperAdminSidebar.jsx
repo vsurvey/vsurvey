@@ -25,31 +25,31 @@ const SuperAdminSidebar = ({ activeTab, setActiveTab, onSidebarToggle }) => {
     {
       id: "clients",
       label: "Create Clients",
-      icon: <Building className="w-4 h-4" />,
+      icon: <Building className="w-5 h-5" />,
     },
     {
       id: "results",
       label: "Survey Results",
-      icon: <BarChart3 className="w-4 h-4" />,
+      icon: <BarChart3 className="w-5 h-5" />,
     },
   ];
 
-
-
   return (
     <SidebarProvider defaultOpen={false}>
-      <SidebarPrimitive className={`mt-4 hidden lg:flex h-screen fixed left-0 top-0 pt-16 lg:pt-20 z-40 bg-white shadow-lg transition-all duration-300 ${
-        isOpen ? 'w-64' : 'w-16'
-      }`}>
+      <SidebarPrimitive
+        className={`mt-4 hidden lg:flex h-screen fixed left-0 top-0 pt-16 lg:pt-20 z-40 bg-white shadow-lg transition-all duration-300 ${
+          isOpen ? "w-64" : "w-16"
+        }`}
+      >
         <SidebarContent>
           <div className="flex justify-end p-2">
-            <SidebarTrigger 
-              open={isOpen} 
+            <SidebarTrigger
+              open={isOpen}
               setOpen={setIsOpen}
               className="hover:bg-gray-100"
             />
           </div>
-          
+
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -59,14 +59,14 @@ const SuperAdminSidebar = ({ activeTab, setActiveTab, onSidebarToggle }) => {
                       onClick={() => setActiveTab(item.id)}
                       isActive={activeTab === item.id}
                       className={`w-full justify-start px-3 py-2 ${
-                        activeTab === item.id ? 'bg-gray-100 border-r-2 border-black text-black font-medium' : 'text-gray-700'
+                        activeTab === item.id
+                          ? "bg-gray-100 border-r-2 border-black text-black font-medium"
+                          : "text-gray-700"
                       }`}
-                      title={!isOpen ? item.label : ''}
+                      title={!isOpen ? item.label : ""}
                     >
                       <div className="flex items-center min-w-0">
-                        <div className="flex-shrink-0">
-                          {item.icon}
-                        </div>
+                        <div className="flex-shrink-0">{item.icon}</div>
                         {isOpen && (
                           <span className="ml-3 text-sm truncate transition-opacity duration-300">
                             {item.label}

@@ -51,6 +51,7 @@ const CreateQuestionAPI = ({
   const [options, setOptions] = useState([""]);
   const [message, setMessage] = useState("");
   const [firebaseQuestions, setFirebaseQuestions] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Edit modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -102,7 +103,7 @@ const CreateQuestionAPI = ({
       const clientsRef = collection(
         db,
         "superadmin",
-        "1nXphRXcXR4h99bneWyw",
+        "hdXje7ZvCbj7eOugVLiZ",
         "clients"
       );
       const snapshot = await getDocs(clientsRef);
@@ -130,11 +131,10 @@ const CreateQuestionAPI = ({
         return;
       }
 
-      console.log("Loading questions for clientId:", clientId);
       const questionsRef = collection(
         db,
         "superadmin",
-        "1nXphRXcXR4h99bneWyw",
+        "hdXje7ZvCbj7eOugVLiZ",
         "clients",
         clientId,
         "questions"
@@ -172,8 +172,12 @@ const CreateQuestionAPI = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (isSubmitting) return; // Prevent double submission
+    setIsSubmitting(true);
+
     if (!questionText.trim() || !responseType) {
       setMessage("Please fill in all required fields");
+      setIsSubmitting(false);
       return;
     }
 
@@ -207,20 +211,15 @@ const CreateQuestionAPI = ({
         throw new Error("No client ID found for current user");
       }
 
-      console.log("Saving question for clientId:", clientId);
       const questionsRef = collection(
         db,
         "superadmin",
-        "1nXphRXcXR4h99bneWyw",
+        "hdXje7ZvCbj7eOugVLiZ",
         "clients",
         clientId,
         "questions"
       );
       await addDoc(questionsRef, questionData);
-      console.log(
-        "Question saved to Firebase successfully for client:",
-        clientId
-      );
 
       // Also save to backend API
       await createQuestion(questionData);
@@ -239,6 +238,8 @@ const CreateQuestionAPI = ({
       console.error("Create question error:", err);
       setMessage(err.message || "Failed to create question");
       setTimeout(() => setMessage(""), 5000);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -266,7 +267,7 @@ const CreateQuestionAPI = ({
       const questionRef = doc(
         db,
         "superadmin",
-        "1nXphRXcXR4h99bneWyw",
+        "hdXje7ZvCbj7eOugVLiZ",
         "clients",
         clientId,
         "questions",
@@ -337,7 +338,7 @@ const CreateQuestionAPI = ({
         const surveysRef = collection(
           db,
           "superadmin",
-          "1nXphRXcXR4h99bneWyw",
+          "hdXje7ZvCbj7eOugVLiZ",
           "clients",
           clientId,
           "surveys"
@@ -357,7 +358,7 @@ const CreateQuestionAPI = ({
             const surveyRef = doc(
               db,
               "superadmin",
-              "1nXphRXcXR4h99bneWyw",
+              "hdXje7ZvCbj7eOugVLiZ",
               "clients",
               clientId,
               "surveys",
@@ -380,7 +381,7 @@ const CreateQuestionAPI = ({
         const questionRef = doc(
           db,
           "superadmin",
-          "1nXphRXcXR4h99bneWyw",
+          "hdXje7ZvCbj7eOugVLiZ",
           "clients",
           clientId,
           "questions",
@@ -584,10 +585,10 @@ const CreateQuestionAPI = ({
 
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || isSubmitting}
                 className="w-full bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-600 hover:to-purple-700"
               >
-                Create Question
+                {isSubmitting ? "Creating..." : "Create Question"}
               </Button>
             </form>
           </div>
@@ -877,17 +878,17 @@ const CreateQuestionAPI = ({
 
             <div className="flex gap-2 pt-4">
               <Button
-                onClick={confirmDelete}
-                className="flex-1 bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-600 hover:to-purple-700"
-              >
-                Delete Question
-              </Button>
-              <Button
                 variant="outline"
                 onClick={cancelDelete}
                 className="flex-1"
               >
                 Cancel
+              </Button>
+              <Button
+                onClick={confirmDelete}
+                className="flex-1 bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-600 hover:to-purple-700"
+              >
+                Delete Question
               </Button>
             </div>
           </div>

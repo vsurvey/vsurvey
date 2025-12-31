@@ -1,136 +1,136 @@
-import { useState } from 'react'
-import { Button } from '../../ui/button'
-import { Input } from '../../ui/input'
-import { Card, CardContent } from '../../ui/card'
-import loginImage from '../../../assets/loginImage.png'
-import authService from '../../../services/authService'
-import { activateClientAdmin, isClientAdminPending, clientAdminExists, isClientAdminActive, isClientAdminDeactivated, needsProfileSetup } from '../../../services/clientStatusService'
-import { activateUser, isUserPending, userExists } from '../../../services/userStatusService'
-import { notifyClientStatusChange } from '../../../services/superAdminNotification'
+import { useState } from "react";
+import { Button } from "../../ui/button";
+import { Input } from "../../ui/input";
+import { Card, CardContent } from "../../ui/card";
+import { Eye, EyeOff } from "lucide-react";
+import loginImage from "../../../assets/loginImage.png";
+import authService from "../../../services/authService";
+import {
+  activateClientAdmin,
+  isClientAdminPending,
+  clientAdminExists,
+  isClientAdminActive,
+  isClientAdminDeactivated,
+  needsProfileSetup,
+} from "../../../services/clientStatusService";
+import {
+  activateUser,
+  isUserPending,
+  userExists,
+} from "../../../services/userStatusService";
+import { notifyClientStatusChange } from "../../../services/superAdminNotification";
 
 const Login = ({ onLogin }) => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [errorMessage, setErrorMessage] = useState('')
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setErrorMessage('')
-    setIsLoading(true)
-    
+    e.preventDefault();
+    setErrorMessage("");
+    setIsLoading(true);
+
     try {
       // Check for super admin credentials
-      if (email === 'superadmin@vsurvey.com' && password === 'superadmin123') {
-        localStorage.setItem('currentSuperAdmin', JSON.stringify({ email: email }))
-        onLogin('superadmin')
-        return
+      if (email === "superadmin@vsurvey.com" && password === "superadmin123") {
+        localStorage.setItem(
+          "currentSuperAdmin",
+          JSON.stringify({ email: email })
+        );
+        onLogin("superadmin");
+        return;
       }
 
       // Check if client admin exists
-      const clientExists = await clientAdminExists(email)
+      const clientExists = await clientAdminExists(email);
 
       // Use Firebase authentication for client admins
-      const result = await authService.signIn(email, password)
-      
+      const result = await authService.signIn(email, password);
+
+      if (!result.success) {
+        setErrorMessage("Invalid email or password");
+        setTimeout(() => setErrorMessage(""), 5000);
+        setIsLoading(false);
+        return;
+      }
+
       if (result.success) {
         // Store fresh token for API calls
-        const token = await result.user.getIdToken(true)
-        localStorage.setItem('firebaseToken', token)
-        
+        const token = await result.user.getIdToken(true);
+        localStorage.setItem("firebaseToken", token);
+
         // Skip activation if this is during user creation process
         if (window.isCreatingUser) {
-          console.log('User creation in progress, skipping activation')
-          return
+          return;
         }
-        
+
         if (clientExists) {
           // Check if client admin is deactivated
-          const isDeactivated = await isClientAdminDeactivated(email)
-          
+          const isDeactivated = await isClientAdminDeactivated(email);
+
           if (isDeactivated) {
-            setErrorMessage('Account Deactivated')
-            setIsLoading(false)
-            return
+            setErrorMessage("Account Deactivated");
+            setIsLoading(false);
+            return;
           }
-          
+
           // Check if client admin is pending and activate them
-          const isPending = await isClientAdminPending(email)
-          
+          const isPending = await isClientAdminPending(email);
+
           if (isPending) {
-            console.log('DEBUG: Attempting to activate client admin:', email)
-            const activated = await activateClientAdmin(email)
-            console.log('DEBUG: Client admin activation result:', activated)
-            
+            const activated = await activateClientAdmin(email);
+
             if (activated) {
-              console.log('✅ Client admin activated successfully:', email)
               // Get fresh token after activation
-              const freshToken = await result.user.getIdToken(true)
-              localStorage.setItem('firebaseToken', freshToken)
+              const freshToken = await result.user.getIdToken(true);
+              localStorage.setItem("firebaseToken", freshToken);
             } else {
-              console.log('❌ Failed to activate client admin:', email)
             }
           }
         } else {
           // Check if regular user exists in our database
-          console.log('DEBUG: Checking if regular user exists:', email)
-          const regularUserExists = await userExists(email)
-          console.log('DEBUG: Regular user exists:', regularUserExists)
-          
+          const regularUserExists = await userExists(email);
+
           if (regularUserExists) {
-            // Check if user is pending and activate them
-            console.log('DEBUG: Checking if user is pending:', email)
-            const isUserPendingStatus = await isUserPending(email)
-            console.log('DEBUG: User is pending:', isUserPendingStatus)
-            
-            if (isUserPendingStatus) {
-              console.log('DEBUG: Attempting to activate user:', email)
-              const userActivated = await activateUser(email)
-              console.log('DEBUG: User activation result:', userActivated)
-              
-              if (userActivated) {
-                console.log('✅ User activated successfully:', email)
-                // Get fresh token after activation
-                const freshToken = await result.user.getIdToken(true)
-                localStorage.setItem('firebaseToken', freshToken)
-              } else {
-                console.log('❌ Failed to activate user:', email)
-              }
-            } else {
-              console.log('DEBUG: User is not pending, current status unknown')
-            }
-          } else {
-            console.log('❌ User not found in database:', email)
+            // Regular users cannot log in on web
+            setErrorMessage(
+              "This account is for mobile app only. Please use the mobile app to log in."
+            );
+            setTimeout(() => setErrorMessage(""), 5000);
+            setIsLoading(false);
+            return;
           }
         }
-        
+
         // Wait a moment for Firebase auth state to update
         setTimeout(async () => {
           // Determine user type based on database presence
           if (clientExists) {
             // Check if profile setup is needed using Firebase data
-            const profileSetupNeeded = await needsProfileSetup(email)
-            onLogin('client', { 
-              email, 
-              isFirstTime: profileSetupNeeded, 
-              profile: null 
-            })
+            const profileSetupNeeded = await needsProfileSetup(email);
+            onLogin("client", {
+              email,
+              isFirstTime: profileSetupNeeded,
+              profile: null,
+            });
           } else {
             // Regular user login - redirect to user dashboard or survey interface
-            onLogin('user', { 
-              email, 
-              isFirstTime: false, 
-              profile: null 
-            })
+            onLogin("user", {
+              email,
+              isFirstTime: false,
+              profile: null,
+            });
           }
-        }, 1500)
+        }, 1500);
       }
     } catch (error) {
-      setErrorMessage('Invalid email or password: ' + error.message)
-    } finally {
-      setIsLoading(false)
+      setErrorMessage("Invalid email or password");
+      setTimeout(() => setErrorMessage(""), 5000);
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4 relative overflow-hidden">
@@ -154,13 +154,13 @@ const Login = ({ onLogin }) => {
                 Advanced data collection and analytics for modern enterprises
               </p>
             </div>
-            
+
             <div className="relative group lg:pl-30 ">
               <div className="absolute -inset-1 bg-gradient-to-r from-blue-200 to-indigo-200 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-1000"></div>
               <div className="relative w-70 h-70 mx-auto lg:mx-0 rounded-2xl overflow-hidden shadow-xl">
-                <img 
-                  src={loginImage} 
-                  alt="Survey Platform" 
+                <img
+                  src={loginImage}
+                  alt="Survey Platform"
                   className="w-full h-full object-cover transform group-hover:scale-105 transition duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-gray-900/20 via-transparent to-transparent"></div>
@@ -173,17 +173,21 @@ const Login = ({ onLogin }) => {
             <Card className="bg-white/80 backdrop-blur-xl border border-gray-200/50 shadow-2xl">
               <CardContent className="p-8">
                 <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-gray-800 mb-2">Welcome Back</h2>
-                  <p className="text-gray-600">Sign in to access your dashboard</p>
-                  
+                  <h2 className="text-3xl font-bold text-gray-800 mb-2">
+                    Welcome Back
+                  </h2>
+                  <p className="text-gray-600">
+                    Sign in to access your dashboard
+                  </p>
+
                   {/* Admin Credentials Display */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mt-4 text-left">
+                  {/* <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mt-4 text-left">
                     <h3 className="text-xs font-semibold text-blue-800 mb-1">Super Admin Access:</h3>
                     <div className="text-xs text-blue-700 space-y-1">
                       <p><strong>Email:</strong> superadmin@vsurvey.com</p>
                       <p><strong>Password:</strong> superadmin123</p>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -200,22 +204,35 @@ const Login = ({ onLogin }) => {
                       className="h-12 bg-white/70 border-gray-300 text-gray-800 placeholder:text-gray-500 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">
                       Password
                     </label>
-                    <Input
-                      type="password"
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="h-12 bg-white/70 border-gray-300 text-gray-800 placeholder:text-gray-500 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
-                    />
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="h-12 bg-white/70 border-gray-300 text-gray-800 placeholder:text-gray-500 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300 pr-12"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                      >
+                        {showPassword ? (
+                          <EyeOff size={20} />
+                        ) : (
+                          <Eye size={20} />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  {/* <div className="flex items-center justify-between">
                     <label className="flex items-center space-x-2 cursor-pointer text-gray-600 hover:text-gray-800 transition-colors">
                       <input type="checkbox" className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                       <span className="text-sm">Remember me</span>
@@ -223,10 +240,16 @@ const Login = ({ onLogin }) => {
                     <a href="#" className="text-sm text-blue-600 hover:text-blue-700 transition-colors">
                       Forgot password?
                     </a>
-                  </div>
+                  </div> */}
 
-                  <Button 
-                    type="submit" 
+                  {errorMessage && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-md text-center">
+                      <p className="text-sm text-red-600">{errorMessage}</p>
+                    </div>
+                  )}
+
+                  <Button
+                    type="submit"
                     className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-lg transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:transform-none"
                     disabled={isLoading}
                   >
@@ -236,32 +259,26 @@ const Login = ({ onLogin }) => {
                         Authenticating...
                       </div>
                     ) : (
-                      'Sign In'
+                      "Sign In"
                     )}
                   </Button>
                 </form>
 
-                {errorMessage && (
-                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-center">
-                    <p className="text-sm text-red-600">{errorMessage}</p>
-                  </div>
-                )}
-
-                <div className="mt-8 text-center">
+                {/* <div className="mt-8 text-center">
                   <p className="text-sm text-gray-500">
                     Need access? 
                     <a href="#" className="text-blue-600 hover:text-blue-700 font-medium transition-colors">
                       Contact your administrator
                     </a>
                   </p>
-                </div>
+                </div> */}
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { apiService } from '../services/api';
+import { useState, useCallback } from "react";
+import { apiService } from "../services/api";
 
 export const useApi = () => {
   const [loading, setLoading] = useState(false);
@@ -16,7 +16,7 @@ export const useApi = () => {
       }
       return result;
     } catch (err) {
-      const errorMessage = err.message || 'An unexpected error occurred';
+      const errorMessage = err.message || "An unexpected error occurred";
       setError(errorMessage);
       if (onError) {
         onError(errorMessage);
@@ -38,69 +38,83 @@ export const useUsers = () => {
     total: 0,
     page: 1,
     size: 10,
-    pages: 0
+    pages: 0,
   });
 
-  const fetchUsers = useCallback(async (params = {}) => {
-    return execute(
-      () => apiService.getUsers(params),
-      (result) => {
-        setUsers(result.items || []);
-        setPagination({
-          total: result.total || 0,
-          page: result.page || 1,
-          size: result.size || 10,
-          pages: result.pages || 0
-        });
-      }
-    );
-  }, [execute]);
+  const fetchUsers = useCallback(
+    async (params = {}) => {
+      return execute(
+        () => apiService.getUsers(params),
+        (result) => {
+          setUsers(result.items || []);
+          setPagination({
+            total: result.total || 0,
+            page: result.page || 1,
+            size: result.size || 10,
+            pages: result.pages || 0,
+          });
+        }
+      );
+    },
+    [execute]
+  );
 
-  const createUser = useCallback(async (userData) => {
-    // Skip backend API during user creation
-    if (window.isCreatingUser) {
-      console.log('DEBUG: Skipping backend createUser during user creation');
-      return { success: true };
-    }
-    
-    return execute(
-      () => apiService.createUser(userData),
-      () => {
-        // Refresh users list after creation
-        fetchUsers({ page: pagination.page, size: pagination.size });
+  const createUser = useCallback(
+    async (userData) => {
+      // Skip backend API during user creation
+      if (window.isCreatingUser) {
+        return { success: true };
       }
-    );
-  }, [execute, fetchUsers, pagination.page, pagination.size]);
 
-  const updateUser = useCallback(async (userId, userData) => {
-    return execute(
-      () => apiService.updateUser(userId, userData),
-      () => {
-        // Refresh users list after update
-        fetchUsers({ page: pagination.page, size: pagination.size });
-      }
-    );
-  }, [execute, fetchUsers, pagination.page, pagination.size]);
+      return execute(
+        () => apiService.createUser(userData),
+        () => {
+          // Refresh users list after creation
+          fetchUsers({ page: pagination.page, size: pagination.size });
+        }
+      );
+    },
+    [execute, fetchUsers, pagination.page, pagination.size]
+  );
 
-  const deleteUser = useCallback(async (userId) => {
-    return execute(
-      () => apiService.deleteUser(userId),
-      () => {
-        // Refresh users list after deletion
-        fetchUsers({ page: pagination.page, size: pagination.size });
-      }
-    );
-  }, [execute, fetchUsers, pagination.page, pagination.size]);
+  const updateUser = useCallback(
+    async (userId, userData) => {
+      return execute(
+        () => apiService.updateUser(userId, userData),
+        () => {
+          // Refresh users list after update
+          fetchUsers({ page: pagination.page, size: pagination.size });
+        }
+      );
+    },
+    [execute, fetchUsers, pagination.page, pagination.size]
+  );
 
-  const toggleUserStatus = useCallback(async (userId) => {
-    return execute(
-      () => apiService.toggleUserStatus(userId),
-      () => {
-        // Refresh users list after status change
-        fetchUsers({ page: pagination.page, size: pagination.size });
-      }
-    );
-  }, [execute, fetchUsers, pagination.page, pagination.size]);
+  const deleteUser = useCallback(
+    async (userId) => {
+      return execute(
+        () => apiService.deleteUser(userId),
+        () => {
+          // Refresh users list after deletion
+          fetchUsers({ page: pagination.page, size: pagination.size });
+        }
+      );
+    },
+    [execute, fetchUsers, pagination.page, pagination.size]
+  );
+
+  const toggleUserStatus = useCallback(
+    async (userId) => {
+      return execute(
+        () => apiService.toggleUserStatus(userId),
+        () => {
+          // Refresh users list after status change
+          fetchUsers({ page: pagination.page, size: pagination.size });
+        }
+      );
+    },
+    [execute, fetchUsers, pagination.page, pagination.size]
+  );
 
   return {
     users,
@@ -112,7 +126,7 @@ export const useUsers = () => {
     createUser,
     updateUser,
     deleteUser,
-    toggleUserStatus
+    toggleUserStatus,
   };
 };
 
@@ -123,50 +137,62 @@ export const useQuestions = () => {
     total: 0,
     page: 1,
     size: 10,
-    pages: 0
+    pages: 0,
   });
 
-  const fetchQuestions = useCallback(async (params = {}) => {
-    return execute(
-      () => apiService.getQuestions(params),
-      (result) => {
-        setQuestions(result.items || []);
-        setPagination({
-          total: result.total || 0,
-          page: result.page || 1,
-          size: result.size || 10,
-          pages: result.pages || 0
-        });
-      }
-    );
-  }, [execute]);
+  const fetchQuestions = useCallback(
+    async (params = {}) => {
+      return execute(
+        () => apiService.getQuestions(params),
+        (result) => {
+          setQuestions(result.items || []);
+          setPagination({
+            total: result.total || 0,
+            page: result.page || 1,
+            size: result.size || 10,
+            pages: result.pages || 0,
+          });
+        }
+      );
+    },
+    [execute]
+  );
 
-  const createQuestion = useCallback(async (questionData) => {
-    return execute(
-      () => apiService.createQuestion(questionData),
-      () => {
-        fetchQuestions({ page: pagination.page, size: pagination.size });
-      }
-    );
-  }, [execute, fetchQuestions, pagination.page, pagination.size]);
+  const createQuestion = useCallback(
+    async (questionData) => {
+      return execute(
+        () => apiService.createQuestion(questionData),
+        () => {
+          fetchQuestions({ page: pagination.page, size: pagination.size });
+        }
+      );
+    },
+    [execute, fetchQuestions, pagination.page, pagination.size]
+  );
 
-  const updateQuestion = useCallback(async (questionId, questionData) => {
-    return execute(
-      () => apiService.updateQuestion(questionId, questionData),
-      () => {
-        fetchQuestions({ page: pagination.page, size: pagination.size });
-      }
-    );
-  }, [execute, fetchQuestions, pagination.page, pagination.size]);
+  const updateQuestion = useCallback(
+    async (questionId, questionData) => {
+      return execute(
+        () => apiService.updateQuestion(questionId, questionData),
+        () => {
+          fetchQuestions({ page: pagination.page, size: pagination.size });
+        }
+      );
+    },
+    [execute, fetchQuestions, pagination.page, pagination.size]
+  );
 
-  const deleteQuestion = useCallback(async (questionId) => {
-    return execute(
-      () => apiService.deleteQuestion(questionId),
-      () => {
-        fetchQuestions({ page: pagination.page, size: pagination.size });
-      }
-    );
-  }, [execute, fetchQuestions, pagination.page, pagination.size]);
+  const deleteQuestion = useCallback(
+    async (questionId) => {
+      return execute(
+        () => apiService.deleteQuestion(questionId),
+        () => {
+          fetchQuestions({ page: pagination.page, size: pagination.size });
+        }
+      );
+    },
+    [execute, fetchQuestions, pagination.page, pagination.size]
+  );
 
   return {
     questions,
@@ -177,7 +203,7 @@ export const useQuestions = () => {
     fetchQuestions,
     createQuestion,
     updateQuestion,
-    deleteQuestion
+    deleteQuestion,
   };
 };
 
@@ -188,59 +214,74 @@ export const useSurveys = () => {
     total: 0,
     page: 1,
     size: 10,
-    pages: 0
+    pages: 0,
   });
 
-  const fetchSurveys = useCallback(async (params = {}) => {
-    return execute(
-      () => apiService.getSurveys(params),
-      (result) => {
-        setSurveys(result.items || []);
-        setPagination({
-          total: result.total || 0,
-          page: result.page || 1,
-          size: result.size || 10,
-          pages: result.pages || 0
-        });
-      }
-    );
-  }, [execute]);
+  const fetchSurveys = useCallback(
+    async (params = {}) => {
+      return execute(
+        () => apiService.getSurveys(params),
+        (result) => {
+          setSurveys(result.items || []);
+          setPagination({
+            total: result.total || 0,
+            page: result.page || 1,
+            size: result.size || 10,
+            pages: result.pages || 0,
+          });
+        }
+      );
+    },
+    [execute]
+  );
 
-  const createSurvey = useCallback(async (surveyData) => {
-    return execute(
-      () => apiService.createSurvey(surveyData),
-      () => {
-        fetchSurveys({ page: pagination.page, size: pagination.size });
-      }
-    );
-  }, [execute, fetchSurveys, pagination.page, pagination.size]);
+  const createSurvey = useCallback(
+    async (surveyData) => {
+      return execute(
+        () => apiService.createSurvey(surveyData),
+        () => {
+          fetchSurveys({ page: pagination.page, size: pagination.size });
+        }
+      );
+    },
+    [execute, fetchSurveys, pagination.page, pagination.size]
+  );
 
-  const updateSurvey = useCallback(async (surveyId, surveyData) => {
-    return execute(
-      () => apiService.updateSurvey(surveyId, surveyData),
-      () => {
-        fetchSurveys({ page: pagination.page, size: pagination.size });
-      }
-    );
-  }, [execute, fetchSurveys, pagination.page, pagination.size]);
+  const updateSurvey = useCallback(
+    async (surveyId, surveyData) => {
+      return execute(
+        () => apiService.updateSurvey(surveyId, surveyData),
+        () => {
+          fetchSurveys({ page: pagination.page, size: pagination.size });
+        }
+      );
+    },
+    [execute, fetchSurveys, pagination.page, pagination.size]
+  );
 
-  const deleteSurvey = useCallback(async (surveyId) => {
-    return execute(
-      () => apiService.deleteSurvey(surveyId),
-      () => {
-        fetchSurveys({ page: pagination.page, size: pagination.size });
-      }
-    );
-  }, [execute, fetchSurveys, pagination.page, pagination.size]);
+  const deleteSurvey = useCallback(
+    async (surveyId) => {
+      return execute(
+        () => apiService.deleteSurvey(surveyId),
+        () => {
+          fetchSurveys({ page: pagination.page, size: pagination.size });
+        }
+      );
+    },
+    [execute, fetchSurveys, pagination.page, pagination.size]
+  );
 
-  const updateSurveyStatus = useCallback(async (surveyId, status) => {
-    return execute(
-      () => apiService.updateSurveyStatus(surveyId, status),
-      () => {
-        fetchSurveys({ page: pagination.page, size: pagination.size });
-      }
-    );
-  }, [execute, fetchSurveys, pagination.page, pagination.size]);
+  const updateSurveyStatus = useCallback(
+    async (surveyId, status) => {
+      return execute(
+        () => apiService.updateSurveyStatus(surveyId, status),
+        () => {
+          fetchSurveys({ page: pagination.page, size: pagination.size });
+        }
+      );
+    },
+    [execute, fetchSurveys, pagination.page, pagination.size]
+  );
 
   return {
     surveys,
@@ -252,7 +293,7 @@ export const useSurveys = () => {
     createSurvey,
     updateSurvey,
     deleteSurvey,
-    updateSurveyStatus
+    updateSurveyStatus,
   };
 };
 
@@ -263,41 +304,50 @@ export const useAssignments = () => {
     total: 0,
     page: 1,
     size: 10,
-    pages: 0
+    pages: 0,
   });
 
-  const fetchAssignments = useCallback(async (params = {}) => {
-    return execute(
-      () => apiService.getAssignments(params),
-      (result) => {
-        setAssignments(result.items || []);
-        setPagination({
-          total: result.total || 0,
-          page: result.page || 1,
-          size: result.size || 10,
-          pages: result.pages || 0
-        });
-      }
-    );
-  }, [execute]);
+  const fetchAssignments = useCallback(
+    async (params = {}) => {
+      return execute(
+        () => apiService.getAssignments(params),
+        (result) => {
+          setAssignments(result.items || []);
+          setPagination({
+            total: result.total || 0,
+            page: result.page || 1,
+            size: result.size || 10,
+            pages: result.pages || 0,
+          });
+        }
+      );
+    },
+    [execute]
+  );
 
-  const assignSurveyToUsers = useCallback(async (assignmentData) => {
-    return execute(
-      () => apiService.assignSurveyToUsers(assignmentData),
-      () => {
-        fetchAssignments({ page: pagination.page, size: pagination.size });
-      }
-    );
-  }, [execute, fetchAssignments, pagination.page, pagination.size]);
+  const assignSurveyToUsers = useCallback(
+    async (assignmentData) => {
+      return execute(
+        () => apiService.assignSurveyToUsers(assignmentData),
+        () => {
+          fetchAssignments({ page: pagination.page, size: pagination.size });
+        }
+      );
+    },
+    [execute, fetchAssignments, pagination.page, pagination.size]
+  );
 
-  const deleteAssignment = useCallback(async (assignmentId) => {
-    return execute(
-      () => apiService.deleteAssignment(assignmentId),
-      () => {
-        fetchAssignments({ page: pagination.page, size: pagination.size });
-      }
-    );
-  }, [execute, fetchAssignments, pagination.page, pagination.size]);
+  const deleteAssignment = useCallback(
+    async (assignmentId) => {
+      return execute(
+        () => apiService.deleteAssignment(assignmentId),
+        () => {
+          fetchAssignments({ page: pagination.page, size: pagination.size });
+        }
+      );
+    },
+    [execute, fetchAssignments, pagination.page, pagination.size]
+  );
 
   return {
     assignments,
@@ -307,7 +357,7 @@ export const useAssignments = () => {
     setError,
     fetchAssignments,
     assignSurveyToUsers,
-    deleteAssignment
+    deleteAssignment,
   };
 };
 

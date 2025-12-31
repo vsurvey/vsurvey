@@ -29,7 +29,7 @@ const SurveyResults = () => {
       const clientsRef = collection(
         db,
         "superadmin",
-        "1nXphRXcXR4h99bneWyw",
+        "hdXje7ZvCbj7eOugVLiZ",
         "clients"
       );
       const snapshot = await getDocs(clientsRef);
@@ -44,7 +44,7 @@ const SurveyResults = () => {
         const surveysRef = collection(
           db,
           "superadmin",
-          "1nXphRXcXR4h99bneWyw",
+          "hdXje7ZvCbj7eOugVLiZ",
           "clients",
           doc.id,
           "surveys"
@@ -58,7 +58,7 @@ const SurveyResults = () => {
           const surveyResponsesRef = collection(
             db,
             "superadmin",
-            "1nXphRXcXR4h99bneWyw",
+            "hdXje7ZvCbj7eOugVLiZ",
             "clients",
             doc.id,
             "surveys",
@@ -103,7 +103,7 @@ const SurveyResults = () => {
           const surveysRef = collection(
             db,
             "superadmin",
-            "1nXphRXcXR4h99bneWyw",
+            "hdXje7ZvCbj7eOugVLiZ",
             "clients",
             clientId,
             "surveys"
@@ -118,7 +118,7 @@ const SurveyResults = () => {
             const surveyResponsesRef = collection(
               db,
               "superadmin",
-              "1nXphRXcXR4h99bneWyw",
+              "hdXje7ZvCbj7eOugVLiZ",
               "clients",
               clientId,
               "surveys",
@@ -240,7 +240,6 @@ const SurveyResults = () => {
                           variant="outline"
                           className="flex items-center gap-2 text-sm sm:text-base px-3 sm:px-4 py-2"
                         >
-                          View
                           {isExpanded ? (
                             <ChevronUp className="w-3 h-3 sm:w-4 sm:h-4" />
                           ) : (

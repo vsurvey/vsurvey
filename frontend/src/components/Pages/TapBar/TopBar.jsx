@@ -11,9 +11,29 @@ const TopBar = ({
   isMobileMenuOpen,
   setIsMobileMenuOpen,
   profile = null,
+  activeTab,
+  profileSetupComplete = true,
 }) => {
   // const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const handleMobileTabClick = (tabId) => {
+    console.log("Mobile tab clicked:", tabId); // Debug log
+    if (!isSuperAdmin && !profileSetupComplete && tabId !== "profile") {
+      setShowPopup(true);
+      setTimeout(() => setShowPopup(false), 2000);
+      return;
+    }
+    if (setActiveTab) {
+      setActiveTab(tabId);
+    }
+    if (setIsMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
+    }
+  };
+  // const [showPopup, setShowPopup] = useState(false);
   const menuItems = isSuperAdmin
     ? [
         { id: "clients", label: "Create Clients" },
@@ -25,13 +45,16 @@ const TopBar = ({
         { id: "surveys", label: "Create Survey" },
         { id: "assignuser", label: "Assign User" },
         { id: "results", label: "Survey Results" },
+        { id: "profile", label: "Profile" },
       ];
   return (
     <div className="fixed top-0 left-0 right-0 bg-white shadow-sm border-b z-50">
       <div className="flex items-center justify-between px-4 sm:px-6 lg:px-10 py-3 sm:py-4 lg:py-4">
         <div className="flex items-center space-x-3">
           <button
-            onClick={() => setIsMobileMenuOpen && setIsMobileMenuOpen(!isMobileMenuOpen)}
+            onClick={() =>
+              setIsMobileMenuOpen && setIsMobileMenuOpen(!isMobileMenuOpen)
+            }
             className="lg:hidden p-2 rounded-md hover:bg-gray-100"
           >
             <div className="w-5 h-5 flex flex-col justify-center space-y-1">
@@ -50,15 +73,6 @@ const TopBar = ({
           </h1>
         </div>
         <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4">
-          {!isSuperAdmin && (
-            <Button
-              onClick={() => setActiveTab("surveys")}
-              className="bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-600 hover:to-purple-700 text-xs sm:text-sm px-3 sm:px-4 lg:px-6 py-2 sm:py-3"
-            >
-              <span className="hidden sm:inline">+ Create Survey</span>
-              <span className="sm:hidden">+ Survey</span>
-            </Button>
-          )}
           <div className="relative">
             <button
               onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
@@ -68,15 +82,19 @@ const TopBar = ({
                 className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center overflow-hidden ${
                   isSuperAdmin
                     ? "bg-gray-600"
-                    : profile?.profileImage
-                    ? "bg-transparent"
-                    : "bg-gray-600"
+                    : profile?.profile_photo || profile?.profileImage
+                      ? "bg-transparent"
+                      : "bg-gray-600"
                 }`}
               >
                 {isSuperAdmin ? (
                   <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                ) : profile?.profileImage ? (
-                  <img src={profile.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                ) : profile?.profile_photo || profile?.profileImage ? (
+                  <img
+                    src={profile?.profile_photo || profile?.profileImage}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 )}
@@ -89,27 +107,52 @@ const TopBar = ({
               <IoIosArrowDown className="text-base" />
             </button>
             {isProfileDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border z-50">
-                {!isSuperAdmin && (
+              <div className="absolute right-0 mt-2 w-56 sm:w-64 bg-white rounded-lg shadow-lg border z-50 mx-2 sm:mx-0">
+                <div className="p-3 sm:p-4">
+                  <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
+                    <div
+                      className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center overflow-hidden ${
+                        isSuperAdmin
+                          ? "bg-gray-600"
+                          : profile?.profile_photo || profile?.profileImage
+                            ? "bg-transparent"
+                            : "bg-gray-600"
+                      }`}
+                    >
+                      {isSuperAdmin ? (
+                        <User className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                      ) : profile?.profile_photo || profile?.profileImage ? (
+                        <img
+                          src={profile?.profile_photo || profile?.profileImage}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-gray-900 text-sm sm:text-base truncate">
+                        {isSuperAdmin ? "Super Admin" : profile?.name || "User"}
+                      </p>
+                      <p className="text-xs sm:text-sm text-gray-500 truncate">
+                        {isSuperAdmin
+                          ? "superadmin@vsurvey.com"
+                          : profile?.email || ""}
+                      </p>
+                    </div>
+                  </div>
+                  <hr className="mb-2 sm:mb-3" />
                   <button
                     onClick={() => {
-                      onProfileEdit && onProfileEdit();
+                      setShowLogoutConfirm(true);
                       setIsProfileDropdownOpen(false);
                     }}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="w-full text-left px-2 sm:px-3 py-2 text-xs sm:text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors"
                   >
-                    Profile
+                    Logout
                   </button>
-                )}
-                <button
-                  onClick={() => {
-                    onLogout();
-                    setIsProfileDropdownOpen(false);
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
-                >
-                  Logout
-                </button>
+                </div>
               </div>
             )}
           </div>
@@ -117,21 +160,67 @@ const TopBar = ({
       </div>
 
       {isMobileMenuOpen && (
-        <div className="lg:hidden bg-white border-t shadow-lg">
+        <div className="lg:hidden bg-white border-t shadow-lg text-center justify-center relative z-50">
           {menuItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => {
-                setActiveTab(item.id);
-                setIsMobileMenuOpen && setIsMobileMenuOpen(false);
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleMobileTabClick(item.id);
               }}
-              className="w-full text-left px-6 py-4 hover:bg-gray-50 border-b border-gray-100 text-sm text-gray-700"
+              className={`w-full text-left px-6 py-4 hover:bg-gray-50 border-b border-gray-100 text-sm ${
+                activeTab === item.id
+                  ? "bg-gray-100 text-black font-medium border-r-4 border-black"
+                  : "text-gray-700"
+              }`}
             >
               {item.label}
             </button>
           ))}
         </div>
       )}
+      {showPopup && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg z-[60]">
+          Please complete your profile setup first
+        </div>
+      )}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70]">
+          <div className="bg-white rounded-lg p-6 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Confirm Logout
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to log out?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowLogoutConfirm(false);
+                  onLogout();
+                }}
+                className="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-30"
+          onClick={() => setIsMobileMenuOpen && setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {isProfileDropdownOpen && (
         <div
           className="fixed inset-0 z-40"
